@@ -5,6 +5,11 @@ from pages import *
 from workflows import *
 from users import *
 
+# TODO - configure from command line
+ZENOSS_URL = 'https://zenoss5.graveyard.zenoss.loc'
+ZENOSS_USERNAME = 'zenny'
+ZENOSS_PASSWORD = 'Z3n0ss123'
+
 # TODO - configure from caommand line
 headless = False
 if headless:
@@ -13,11 +18,9 @@ if headless:
 
 if __name__ == '__main__':
     # TODO - spin up n users
-    # TODO - configure URL, username, pass
     # TODO - configure user
-    # TODO - chromedriver location
-    bob = User()
-    login = LoginAndOut()
+    bob = User("bob")
+    login = LoginAndOut(baseURL=ZENOSS_URL, user=ZENOSS_USERNAME, password=ZENOSS_PASSWORD)
     bob.addWorkflow([login])
     try:
         bob.work()

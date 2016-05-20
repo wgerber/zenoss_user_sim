@@ -3,33 +3,36 @@ import time, traceback
 from pages import login_page as LoginPage
 from pages import global_page as GlobalPage
 
-# Move this to sim driver
-ZENOSS_URL = 'https://zenoss5.graveyard.zenoss.loc'
-ZENOSS_USERNAME = 'zenny'
-ZENOSS_PASSWORD = 'Z3n0ss123'
-
 class Workflow(object):
-    def __init__(self):
-        self.driver = None
+    def __init__(self, **kwargs):
         self.name = self.__class__.__name__
+        self.args = kwargs
 
 class LoginAndOut(Workflow):
     def run(self, driver):
         start = time.time()
 
-        # navigate to base zenoss url / login page
-        driver.get(ZENOSS_URL)
+        baseURL = self.args["baseURL"]
+        username = self.args["user"]
+        password = self.args["password"]
+
+        try:
+            # navigate to base zenoss url / login page
+            driver.get(baseURL)
+        except:
+            traceback.print_exc()
+            return {'success': False, 'stat': {}, 'error': 'unable to navigate to %s' % baseURL}
 
         try:
             LoginPage.login(
-                driver, ZENOSS_URL, ZENOSS_USERNAME, ZENOSS_PASSWORD)
+                driver, baseURL, username, password)
         except:
             traceback.print_exc()
             return {'success': False, 'stat': {}, 'error': 'failed to log in'}
 
         try:
             GlobalPage.logout(
-                driver, ZENOSS_URL)
+                driver, baseURL)
         except:
             traceback.print_exc()
             return {'success': False, 'stat': {}, 'error': 'failed to log out'}

@@ -4,12 +4,10 @@ from selenium import webdriver
 
 from workflows import Workflow
 
-# Feed this from top level
-CHROMEDRIVER = '/home/john/.local/bin/chromedriver'
-
 class User(object):
-    def __init__(self):
-        self.driver = webdriver.Chrome(CHROMEDRIVER)
+    def __init__(self, name="bob"):
+        self.name = name
+        self.driver = webdriver.Chrome()
         self.driver.implicitly_wait(10)
         self.driver.set_window_size(1100, 800)
         self.workflows = []
@@ -18,7 +16,11 @@ class User(object):
     def work(self):
         for workflow in self.workflows:
             print "beginning workflow %s" % workflow.name
-            result = workflow.run(self.driver)
+            try:
+                result = workflow.run(self.driver)
+            except:
+                print "something went really wrong"
+                raise
             self.stat[workflow.name].append(result)
             if not result['success']:
                 print 'User quit while doing {}'.format(workflow.name)
