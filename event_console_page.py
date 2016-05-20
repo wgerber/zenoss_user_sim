@@ -8,7 +8,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 
-from common import assertPage
+from common import *
 
 # TODO: Differentiate EventConsole, EventArchive, etc.
 TITLE = 'Zenoss: Events'

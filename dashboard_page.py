@@ -11,19 +11,7 @@ from selenium.common.exceptions import TimeoutException
 from common import assertPage
 
 TITLE = 'Zenoss: Dashboard'
-locator = {'header': '#header',
-           'eventsNavBtn': '#Events-nav-button'}
-
-@assertPage(TITLE)
-def goToEventConsole(driver):
-    time.sleep(3) # Wait until the pop-up disappears.
-    driver.find_element_by_css_selector(locator['eventsNavBtn']).click()
-
-    return {'success': True, 'data': None}
-
-    # wait until the page is loaded.
-    # check the page is actually event console.
-    # If not, return false.
+locator = {'header': '#header'}
 
 @assertPage(TITLE)
 def checkPageLoaded(driver):

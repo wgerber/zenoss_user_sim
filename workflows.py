@@ -1,6 +1,7 @@
 from common import *
 import login_page as LoginPage
 import devices_page as DevicesPage
+import event_console_page as EventConsolePage
 import navigation as Navigation
 
 # Move this to sim driver
@@ -31,7 +32,7 @@ class AckEvents(Workflow):
         failResult = {'success': False, 'stat': None}
 
 # TODO: Return stat so far if fails
-        result = DashboardPage.goToEventConsole(driver)
+        result = Navigation.goToEventConsole(driver)
 
         if not result['success']:
             return failResult
