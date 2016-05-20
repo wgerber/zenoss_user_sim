@@ -1,3 +1,5 @@
+from selenium.webdriver.support.wait import WebDriverWait
+
 class assertPage(object):
     def __init__(self, title):
         self.title = title
@@ -19,3 +21,6 @@ def findMany(d, selector):
 
 def findIn(el, selector):
     return el.find_element_by_css_selector(selector)
+
+def wait(d, fn, time=10):
+    WebDriverWait(d, time).until(fn)

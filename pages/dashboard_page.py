@@ -8,11 +8,15 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 
-from utils import assertPage
+from utils import assertPage, find
 
 TITLE = 'Zenoss: Dashboard'
 locator = {'header': '#header',
            'eventsNavBtn': '#Events-nav-button'}
+
+elements = {
+        "welcomePortlet": "#app-portal .x-portal-column:nth-of-type(1) .x-portlet:nth-of-type(1)"
+        }
 
 @assertPage(TITLE)
 def goToEventConsole(driver):
@@ -21,22 +25,16 @@ def goToEventConsole(driver):
 
     return {'success': True, 'data': None}
 
-    # wait until the page is loaded.
-    # check the page is actually event console.
-    # If not, return false.
-
+# wait until the page is loaded.
+# check the page is actually event console.
+# If not, return false.
 @assertPage(TITLE)
 def checkPageLoaded(driver):
     try:
-        element = 'header'
-        timeout = 10
-        element = WebDriverWait(driver, timeout).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, locator[element])))
-    except TimeoutException:
-        print "{} was not loaded in {} secs.".format(element, timeout)
+        # wait till dashboard is loaded
+        find(driver, elements["welcomePortlet"])
+    except:
+        # TODO - log failure reason
         return False
 
-    if TITLE in driver.title:
-        return True
-    else:
-        return False
+    return True
