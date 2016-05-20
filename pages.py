@@ -72,10 +72,8 @@ class BasePageElement(object):
 class DashboardPage(object):
     TITLE = 'Zenoss: Dashboard'
     locator = {'header': '#header',
-               'eventsBtn': '#Events-nav-button',
-               'events': '#events_grid-body table:nth-of-type(1) .x-grid-row',
-               'eventStateElement': '.x-grid-cell-eventState',
-               'eventState': {'new': '.status-icon-small-new'}}
+               'eventsNavBtn': '#Events-nav-button'}
+
     @staticmethod
     @assertPage(TITLE)
     def goToEventConsole(driver):
@@ -88,34 +86,13 @@ class DashboardPage(object):
 #             return False
 
         time.sleep(3) # Wait until the pop-up disappears.
-        driver.find_element_by_css_selector(DashboardPage.locator['eventsBtn']).click()
+        driver.find_element_by_css_selector(DashboardPage.locator['eventsNavBtn']).click()
 
-        try:
-            timeout = 10
-            element = WebDriverWait(driver, timeout).until(
-                EC.presence_of_all_elements_located((By.CSS_SELECTOR, DashboardPage.locator['events'])))
-        except TimeoutException:
-            print "The Events nav button didn't become clickable in {} secs.".format(timeout)
-            return False
-
-        events = driver.find_elements_by_css_selector(DashboardPage.locator['events'])
-        data = DashboardPage.dictfyEvents(events)
-
-        return {'success': True, 'data': data}
+        return {'success': True, 'data': None}
 
         # wait until the page is loaded.
         # check the page is actually event console.
         # If not, return false.
-
-    @staticmethod
-    def dictfyEvents(events):
-        data ={}
-        data['events'] = []
-
-        for event in events:
-            state = 'acknowledged' if 'acknowledged' in event.get_attribute('class') else 'unackonwledged'
-            data['events'].append({'state': state})
-        return data
 
     @staticmethod
     @assertPage(TITLE)
@@ -141,8 +118,10 @@ class EventConsolePage(object):
                'selectBtn': (By.ID, 'select-button-btnEl'),
                'ackBtn': (By.ID, 'events_toolbar_ack-btnEl'),
                'refreshBtn': (By.NAME, 'refresh-button'),
-               'allMenu': (By.ID, 'menuitem-1063-itemEl')}
-
+               'allMenu': (By.ID, 'menuitem-1063-itemEl'),
+               'events': '#events_grid-body table:nth-of-type(1) .x-grid-row',
+               'eventStateElement': '.x-grid-cell-eventState',
+               'eventState': {'new': '.status-icon-small-new'}}
     @staticmethod
     @assertPage(TITLE)
     def filterBySeverity(driver, severity):
@@ -194,3 +173,44 @@ class EventConsolePage(object):
 
         return True
 
+    @staticmethod
+    @assertPage(TITLE)
+    def getEvents(driver):
+        try:
+            timeout = 10
+            element = WebDriverWait(driver, timeout).until(
+                EC.presence_of_all_elements_located((By.CSS_SELECTOR, EventConsolePage.locator['events'])))
+        except TimeoutException:
+            print "The Events nav button didn't become clickable in {} secs.".format(timeout)
+            return False
+
+        data = {'events': get_event_list(driver)}
+        return {'success': True, 'data': data}
+
+def get_event_list(d):
+    # assumes at event page
+    # wait for events grid to be ready
+    find(d, "#events_grid")
+
+    event_rows = findMany(d, "#events_grid-body table .x-grid-row")
+    events = []
+    for el in event_rows:
+        events.append({
+            "resource": findIn(el, ".x-grid-cell-device").text,
+            "class": findIn(el, ".x-grid-cell-eventClass").text,
+            "summary": findIn(el, ".x-grid-cell-summary").text,
+            "first_seen": findIn(el, ".x-grid-cell-firstTime").text,
+            "last_seen": findIn(el, ".x-grid-cell-lastTime").text,
+            "count": findIn(el, ".x-grid-cell-count").text,
+        })
+
+    return events
+
+def find(d, selector):
+    return d.find_element_by_css_selector(selector)
+
+def findMany(d, selector):
+    return d.find_elements_by_css_selector(selector)
+
+def findIn(el, selector):
+    return el.find_element_by_css_selector(selector)

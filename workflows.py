@@ -29,12 +29,16 @@ class AckEvents(Workflow):
 
 # TODO: Return stat so far if fails
         result = DashboardPage.goToEventConsole(driver)
-        print result
 
         if not result['success']:
             return failResult
 #        if not EventConsolePage.filterBySeverity(driver, 'test'):
 #            return {'success': False, 'stat': None}
+        result = EventConsolePage.getEvents(driver)
+        if not result['success']:
+            return failResult
+        print result
+
         if not EventConsolePage.ackAll(driver):
             return failResult
 
