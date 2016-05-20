@@ -8,7 +8,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 
-from utils import assertPage
+from common import assertPage
 
 TITLE = 'Zenoss: Dashboard'
 locator = {'header': '#header',
