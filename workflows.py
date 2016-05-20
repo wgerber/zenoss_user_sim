@@ -1,4 +1,5 @@
 from pages import *
+import login_page as LoginPage
 
 # Move this to sim driver
 ZENOSS_URL = 'https://zenoss5.zenoss-1310-d'
