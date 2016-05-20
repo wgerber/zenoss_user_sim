@@ -1,4 +1,7 @@
+from collections import defaultdict
 from selenium import webdriver
+
+from workflows import Workflow
 
 # Feed this from top level
 CHROMEDRIVER = '/home/ylee/Downloads/chromedriver'

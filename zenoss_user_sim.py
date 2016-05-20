@@ -2,7 +2,8 @@ import time
 from xvfbwrapper import Xvfb
 
 from pages import *
-
+from workflows import *
+from users import *
 
 headless = True
 if headless:
