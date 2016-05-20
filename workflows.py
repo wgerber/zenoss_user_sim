@@ -1,5 +1,7 @@
-from pages import *
+from common import *
 import login_page as LoginPage
+import devices_page as DevicesPage
+import navigation as Navigation
 
 # Move this to sim driver
 ZENOSS_URL = 'https://zenoss5.zenoss-1310-d'
@@ -48,3 +50,19 @@ class AckEvents(Workflow):
 
         return {'success': True, 'stat': stat}
 
+class CheckDevice(Workflow):
+    def __init__(self, ip):
+        Workflow.__init__(self)
+        self.ip = ip
+
+    def run(self, driver):
+        start = time.time()
+
+        Navigation.goToDevicesPage(driver)
+        result = DevicesPage.filterByIp(driver, self.ip)
+        print result
+
+        end = time.time()
+        stat = {'elapsedTime': end - start}
+
+        return {'success': True, 'stat': stat}

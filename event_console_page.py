@@ -8,7 +8,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 
-from utils import assertPage
+from common import assertPage
 
 # TODO: Differentiate EventConsole, EventArchive, etc.
 TITLE = 'Zenoss: Events'
@@ -72,9 +72,9 @@ def getEvents(driver):
         print "The Events nav button didn't become clickable in {} secs.".format(timeout)
         return False
 
-    find(d, "#events_grid")
+    find(driver, "#events_grid")
 
-    event_rows = findMany(d, "#events_grid-body table .x-grid-row")
+    event_rows = findMany(driver, "#events_grid-body table .x-grid-row")
     events = []
     for el in event_rows:
         events.append({
