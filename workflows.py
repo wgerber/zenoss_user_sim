@@ -1,3 +1,4 @@
+import traceback
 from common import *
 import login_page as LoginPage
 import devices_page as DevicesPage
@@ -10,20 +11,61 @@ ZENOSS_USERNAME = 'Young'
 ZENOSS_PASSWORD = 'Zenoss1234'
 
 class Workflow(object):
-    def __init__(self):
-        self.driver = None
+    def __init__(self, **kwargs):
         self.name = self.__class__.__name__
+        self.args = kwargs
 
-class Login(Workflow):
+class LoginAndLogout(Workflow):
     @timed
     def run(self, driver):
-        result = WorkflowResult(self.name)
+        workflowResult = WorkflowResult(self.name)
 
-        takeAction(
-            result, LoginPage.login,
-            driver, ZENOSS_URL, ZENOSS_USERNAME, ZENOSS_PASSWORD)
+        baseURL = self.args["baseURL"]
+        username = self.args["user"]
+        password = self.args["password"]
 
-        return result
+        # TODO - move this to some common actions page?
+        # TODO - this is essentially a page action and should
+        # not appear up here at the workflow level. this is a 
+        # bit messy because were creating the action result
+        # here
+        actionResult = ActionResult('navigateToZenoss')
+        try:
+            # navigate to base zenoss url / login page
+            driver.get(baseURL)
+        except:
+            # why we failed this particular action
+            actionResult.failResult("could not navigate to %s" % baseURL)
+            # NOTE - adding a failed action result to a workflow will
+            # fail the workflow and note which result caused the failure
+            workflowResult.addActionResult(actionResult)
+            # why we failed the entire workflow
+            traceback.print_exc()
+
+        print "navigated to base url"
+
+        try:
+            takeAction(
+                workflowResult, LoginPage.login,
+                driver, baseURL, username, password)
+        except:
+            workflowResult.failResult("unexpected failure in login") 
+            traceback.print_exc()
+
+        print "logged in"
+
+        # TODO - user think
+
+        try:
+            takeAction(
+                workflowResult, Navigation.logout, driver)
+        except:
+            workflowResult.failResult("unexpected failure in logout") 
+            traceback.print_exc()
+
+        print "logged out"
+
+        return workflowResult
 
 class AckEvents(Workflow):
     @timed

@@ -66,10 +66,15 @@ class Result(object):
         self.name = name
         self.success = True
         self.stat = {}
+        self.error = ""
 
     def putStat(self, k, v):
         k = '.'.join([self.name, k])
         self.stat[k] = v
+
+    def failResult(self, error):
+        self.success = False
+        self.error = error
 
 class ActionResult(Result):
     def __init__(self, name):
@@ -88,6 +93,9 @@ class WorkflowResult(Result):
     def addActionResult(self, result):
         if not result.success:
             self.failedAction = result.name
+            # fail this workflow with the error
+            # of the failing action result
+            self.failResult(result.error)
         self.success *= result.success
         for k, v in result.stat.iteritems():
             k = '.'.join([self.name, k])
