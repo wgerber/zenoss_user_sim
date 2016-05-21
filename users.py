@@ -3,23 +3,23 @@ from selenium import webdriver
 
 from workflows import Workflow
 
-# Feed this from top level
-CHROMEDRIVER = '/home/ylee/Downloads/chromedriver'
-
 class User(object):
-    def __init__(self):
-        self.driver = webdriver.Chrome(CHROMEDRIVER)
+    def __init__(self, name, chromedriver):
+        self.name = name
+        self.driver = webdriver.Chrome(chromedriver)
+        # TODO - remove implicit wait eventually
         self.driver.implicitly_wait(10)
         self.workflows = []
+        # TODO - stat and results can probably be the same thing
         self.stat = {}
+        self.results = []
 
     def work(self):
         for workflow in self.workflows:
             result = workflow.run(self.driver)
-            if result.success:
-                self.stat.update(result.stat)
-            else:
-                # TODO: Quit gracefully. At least report the result so far.
+            self.stat.update(result.stat)
+            self.results.append(result)
+            if not result.success:
                 print 'User quits while doing {}'.format(workflow.name)
                 self.quit()
 
@@ -35,3 +35,6 @@ class User(object):
         else:
             self.workflows.append(workflow)
 
+    # TODO - log
+    # TODO - screenshots
+    # TODO - think
