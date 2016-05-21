@@ -23,6 +23,9 @@ locator = {'severityBtn': (By.ID, 'events_grid-filter-severity-btnEl'),
 
 @assertPage(TITLE)
 def filterBySeverity(driver, severity):
+    result = ActionResult('ackAll')
+    start = time.time()
+
     time.sleep(3) # Wait until the pop-up disappears.
 
     try:
@@ -32,13 +35,21 @@ def filterBySeverity(driver, severity):
             EC.presence_of_element_located(locator[element]))
     except TimeoutException:
         print '{} did not appear in {} secs'.format(element, timeout)
+        result.success = False
+        return result
 
     driver.find_element(*locator['severityBtn']).click()
 
-    return True
+    elapsedTime = time.time() - start
+    result.putStat('elapsedTime', elapsedTime)
+
+    return result
 
 @assertPage(TITLE)
 def selectAll(driver):
+    result = ActionResult('ackAll')
+    start = time.time()
+
     time.sleep(3) # Wait until the pop-up disappears.
 
     try:
@@ -48,28 +59,30 @@ def selectAll(driver):
             EC.presence_of_element_located(locator[element]))
     except TimeoutException:
         print '{} did not appear in {} secs'.format(element, timeout)
-        return False
+        result.success = False
+        return result
 
     driver.find_element(*locator['selectBtn']).click()
     driver.find_element(*locator['allMenu']).click()
 
-    return True
+    return result
 
 @assertPage(TITLE)
 def ackAll(driver):
+    result = ActionResult('ackAll')
     start = time.time()
 
     selectAll(driver)
     driver.find_element(*locator['ackBtn']).click()
 
-    result = Result('ackAll')
     elapsedTime = time.time() - start
-    result.putStat('elapsedTime', elapsedTime)
 
+    result.putStat('elapsedTime', elapsedTime)
     return result
 
 @assertPage(TITLE)
 def getEvents(driver):
+    result = ActionResult('getEvents')
     start = time.time()
 
     try:
@@ -77,8 +90,9 @@ def getEvents(driver):
         element = WebDriverWait(driver, timeout).until(
             EC.presence_of_all_elements_located((By.CSS_SELECTOR, locator['events'])))
     except TimeoutException:
-        print "The Events nav button didn't become clickable in {} secs.".format(timeout)
-        return False
+        print "Event list was not loaded in {} secs.".format(timeout)
+        result.success = False
+        return result
 
     find(driver, "#events_grid")
 
@@ -96,7 +110,6 @@ def getEvents(driver):
 
     elapsedTime = time.time() - start
 
-    result = Result('getEvents')
     result.putData('events', events)
     result.putStat('elapsedTime', elapsedTime)
 

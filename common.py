@@ -34,6 +34,15 @@ class assertPageAfter(object):
             return result
         return wrapper
 
+def timed(f):
+    def wrapper(*args, **kwargs):
+        start = time.time()
+        result = f(*args, **kwargs)
+        elapsedTime = time.time() - start
+        result.putStat('elapsedTime', elapsedTime)
+        return result
+    return wrapper
+
 def find(d, selector):
     return d.find_element_by_css_selector(selector)
 
@@ -54,11 +63,15 @@ class Result(object):
         self.name = name
         self.success = True
         self.stat = {}
-        self.data = {}
 
     def putStat(self, k, v):
         k = '.'.join([self.name, k])
         self.stat[k] = v
+
+class ActionResult(Result):
+    def __init__(self, name):
+        Result.__init__(self, name)
+        self.data = {}
 
     def putData(self, k, v):
         k = '.'.join([self.name, k])
@@ -67,13 +80,12 @@ class Result(object):
 class WorkflowResult(Result):
     def __init__(self, name):
         Result.__init__(self, name)
-        self.failedTask = None
+        self.failedAction = None
 
-    def putTaskResult(self, result):
+    def addActionResult(self, result):
         if not result.success:
-            self.failedTask = result.name
+            self.failedAction = result.name
         self.success *= result.success
-        self.stat.update(result.stat)
-        self.data.update(result.data)
-
-
+        for k, v in result.stat.iteritems():
+            k = '.'.join([self.name, k])
+            self.stat[k] = v

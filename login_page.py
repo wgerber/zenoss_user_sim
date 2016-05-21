@@ -6,9 +6,18 @@ locator = {'loginButton': (By.ID, 'loginButton'),
            'username': (By.NAME, '__ac_name'),
            'password': (By.NAME, '__ac_password')}
 
+def timed(f):
+    def wrapper(*args, **kwargs):
+        start = time.time()
+        result = f(*args, **kwargs)
+        elapsedTime = time.time() - start
+        result.putStat('elapsedTime', elapsedTime)
+        return result
+    return wrapper
+
+@timed
 @assertPageAfter('Zenoss: Dashboard')
 def login(driver, url, username, password):
-    start = time.time()
     driver.get(url)
 
     try:
@@ -23,9 +32,8 @@ def login(driver, url, username, password):
     driver.find_element(*locator['username']).send_keys(username)
     driver.find_element(*locator['password']).send_keys(password)
     driver.find_element(*locator['loginButton']).click()
-    end = time.time()
-    result = Result('login')
-    result.putStat('elapsedTime', end - start)
+
+    result = ActionResult('login')
 
     return result
 
