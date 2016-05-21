@@ -16,8 +16,8 @@ class User(object):
     def work(self):
         for workflow in self.workflows:
             result = workflow.run(self.driver)
-            if result['success']:
-                self.stat[workflow.name].append(result['stat'])
+            if result.success:
+                self.stat[workflow.name].append(result.stat)
             else:
                 print 'User quits while doing {}'.format(workflow.name)
                 self.quit()

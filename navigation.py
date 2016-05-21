@@ -7,8 +7,9 @@ locator = {'events': '#Events-nav-button',
 def goToEventConsole(driver):
     time.sleep(3) # Wait until the pop-up disappears.
     find(driver, locator['events']).click()
+    time.sleep(3)
 
-    return {'success': True, 'data': None}
+    return Result('goToEventConsole')
 
     # wait until the page is loaded.
     # check the page is actually event console.

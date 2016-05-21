@@ -29,8 +29,8 @@ class assertPageAfter(object):
         def wrapper(*args, **kwargs):
             result = f(*args, **kwargs)
             assert self.title in args[0].title, \
-                '{}() is called on the wrong page, {}.'.format(
-                    f.__name__, self.title)
+                'calling {}() moved to the wrong page, {}.'.format(
+                    f.__name__, args[0].title)
             return result
         return wrapper
 
@@ -42,5 +42,38 @@ def findMany(d, selector):
 
 def findIn(el, selector):
     return el.find_element_by_css_selector(selector)
+
+def merge(d1, d2):
+    """Merge two dictionaries. The latter argument overwrites the former."""
+    result = d1.copy()
+    result.update(d2)
+    return result
+
+class Result(object):
+    def __init__(self, name):
+        self.name = name
+        self.success = True
+        self.stat = {}
+        self.data = {}
+
+    def putStat(self, k, v):
+        k = '.'.join([self.name, k])
+        self.stat[k] = v
+
+    def putData(self, k, v):
+        k = '.'.join([self.name, k])
+        self.data[k] = v
+
+class WorkflowResult(Result):
+    def __init__(self, name):
+        Result.__init__(self, name)
+        self.failedTask = None
+
+    def putTaskResult(self, result):
+        if not result.success:
+            self.failedTask = result.name
+        self.success *= result.success
+        self.stat.update(result.stat)
+        self.data.update(result.data)
 
 

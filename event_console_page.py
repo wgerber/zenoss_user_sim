@@ -57,13 +57,21 @@ def selectAll(driver):
 
 @assertPage(TITLE)
 def ackAll(driver):
+    start = time.time()
+
     selectAll(driver)
     driver.find_element(*locator['ackBtn']).click()
 
-    return True
+    result = Result('ackAll')
+    elapsedTime = time.time() - start
+    result.putStat('elapsedTime', elapsedTime)
+
+    return result
 
 @assertPage(TITLE)
 def getEvents(driver):
+    start = time.time()
+
     try:
         timeout = 10
         element = WebDriverWait(driver, timeout).until(
@@ -86,6 +94,10 @@ def getEvents(driver):
             "count": findIn(el, ".x-grid-cell-count").text,
         })
 
-    data = {'events': events}
+    elapsedTime = time.time() - start
 
-    return {'success': True, 'data': data}
+    result = Result('getEvents')
+    result.putData('events', events)
+    result.putStat('elapsedTime', elapsedTime)
+
+    return result
