@@ -6,15 +6,6 @@ locator = {'loginButton': (By.ID, 'loginButton'),
            'username': (By.NAME, '__ac_name'),
            'password': (By.NAME, '__ac_password')}
 
-def timed(f):
-    def wrapper(*args, **kwargs):
-        start = time.time()
-        result = f(*args, **kwargs)
-        elapsedTime = time.time() - start
-        result.putStat('elapsedTime', elapsedTime)
-        return result
-    return wrapper
-
 @timed
 @assertPageAfter('Zenoss: Dashboard')
 def login(driver, url, username, password):
@@ -39,4 +30,3 @@ def login(driver, url, username, password):
 
 def logout(self):
     pass
-

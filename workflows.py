@@ -26,9 +26,9 @@ class Login(Workflow):
         return result
 
 class AckEvents(Workflow):
+    @timed
     def run(self, driver):
         result = WorkflowResult(self.name)
-        start = time.time()
 
         takeAction(result, Navigation.goToEventConsole, driver)
         if not result.success:
@@ -41,9 +41,6 @@ class AckEvents(Workflow):
         takeAction(result, EventConsolePage.ackAll, driver)
         if not result.success:
             return result
-
-        elapsedTime = time.time() - start
-        result.putStat('elapsedTime', elapsedTime)
 
         return result
 
@@ -65,4 +62,5 @@ class CheckDevice(Workflow):
         return {'success': True, 'stat': stat}
 
 def takeAction(result, action, *actionArgs):
-    result.addActionResult(action(*actionArgs))
+    actionResult = action(*actionArgs)
+    result.addActionResult(actionResult)

@@ -29,7 +29,7 @@ class assertPageAfter(object):
         def wrapper(*args, **kwargs):
             result = f(*args, **kwargs)
             assert self.title in args[0].title, \
-                'calling {}() moved to the wrong page, {}.'.format(
+                'calling {}() moved driver to the wrong page, {}.'.format(
                     f.__name__, args[0].title)
             return result
         return wrapper
@@ -38,7 +38,10 @@ def timed(f):
     def wrapper(*args, **kwargs):
         start = time.time()
         result = f(*args, **kwargs)
-        elapsedTime = time.time() - start
+        if result.success:
+            elapsedTime = time.time() - start
+        else:
+            elapsedTime = None
         result.putStat('elapsedTime', elapsedTime)
         return result
     return wrapper
