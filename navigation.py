@@ -5,19 +5,25 @@ locator = {'events': '#Events-nav-button',
 
 @assertPageAfter('Zenoss: Events')
 def goToEventConsole(driver):
+    start = time.time()
     time.sleep(3) # Wait until the pop-up disappears.
     find(driver, locator['events']).click()
     time.sleep(3)
 
-    return Result('goToEventConsole')
+    result = Result('goToEventConsole')
+    elapsedTime = time.time() - start
+    result.putStat('elapsedTime', elapsedTime)
 
-    # wait until the page is loaded.
-    # check the page is actually event console.
-    # If not, return false.
+    return result
 
 @assertPageAfter('Zenoss: Devices')
 def goToDevicesPage(driver):
+    start = time.time()
     time.sleep(2) # wait pop-up
     find(driver, locator['infrastructure']).click()
-    # TODO: check the page is loaded.
-    return {'success': True, 'data': None}
+
+    result = Result('goToDevicePage')
+    elapsedTime = time.time() - start
+    result.putStat('elapsedTime', elapsedTime)
+
+    return result

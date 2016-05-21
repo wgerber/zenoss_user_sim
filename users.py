@@ -11,14 +11,15 @@ class User(object):
         self.driver = webdriver.Chrome(CHROMEDRIVER)
         self.driver.implicitly_wait(10)
         self.workflows = []
-        self.stat = defaultdict(list)
+        self.stat = {}
 
     def work(self):
         for workflow in self.workflows:
             result = workflow.run(self.driver)
             if result.success:
-                self.stat[workflow.name].append(result.stat)
+                self.stat.update(result.stat)
             else:
+                # TODO: Quit gracefully. At least report the result so far.
                 print 'User quits while doing {}'.format(workflow.name)
                 self.quit()
 
