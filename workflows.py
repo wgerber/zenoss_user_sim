@@ -16,40 +16,42 @@ class Workflow(object):
 
 class Login(Workflow):
     def run(self, driver):
+        workflowResult = WorkflowResult(self.name)
         start = time.time()
 
-        LoginPage.login(
+        result = LoginPage.login(
             driver, ZENOSS_URL, ZENOSS_USERNAME, ZENOSS_PASSWORD)
+        workflowResult.putTaskResult(result)
 
         end = time.time()
         stat = {'elapsedTime': end - start}
 
-        return {'success': True, 'stat': stat}
+        return workflowResult
 
 class AckEvents(Workflow):
     def run(self, driver):
+        workflowResult = WorkflowResult(self.__class__.__name__)
         start = time.time()
-        failResult = {'success': False, 'stat': None}
 
-# TODO: Return stat so far if fails
-        result = Navigation.goToEventConsole(driver)
+#        result = Navigation.goToEventConsole(driver)
+#        workflowResult.merge(result)
 
-        if not result['success']:
-            return failResult
-#        if not EventConsolePage.filterBySeverity(driver, 'test'):
-#            return {'success': False, 'stat': None}
-        result = EventConsolePage.getEvents(driver)
-        if not result['success']:
-            return failResult
-        print result
+        performTask(driver, Navigation.goToEventConsole, workflowResult)
+        if not workflowResult.success:
+            return workflowResult
 
-        if not EventConsolePage.ackAll(driver):
-            return failResult
+        performTask(driver, EventConsolePage.getEvents, workflowResult)
+        if not workflowResult.success:
+            return workflowResult
+
+        performTask(driver, EventConsolePage.ackAll, workflowResult)
+        if not workflowResult.success:
+            return workflowResult
 
         end = time.time()
         stat = {'elapsedTime': end - start}
 
-        return {'success': True, 'stat': stat}
+        return workflowResult
 
 class CheckDevice(Workflow):
     def __init__(self, ip):
@@ -67,3 +69,7 @@ class CheckDevice(Workflow):
         stat = {'elapsedTime': end - start}
 
         return {'success': True, 'stat': stat}
+
+def performTask(driver, task, workflowResult):
+    result = task(driver)
+    workflowResult.putTaskResult(result)

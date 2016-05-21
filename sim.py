@@ -16,3 +16,4 @@ if __name__ == '__main__':
     bob.addWorkflow([login, ackEvents])
     bob.work()
     print bob.stat
+    bob.quit()
