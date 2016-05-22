@@ -1,1 +1,2 @@
-pages.pyc users.pyc workflows.pyc
+*.pyc
+my-*.py
