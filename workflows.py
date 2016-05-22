@@ -91,17 +91,21 @@ class CheckDevice(Workflow):
         Workflow.__init__(self)
         self.ip = ip
 
+    @timed
     def run(self, driver):
-        start = time.time()
+        result = WorkflowResult(self.name)
 
-        Navigation.goToDevicesPage(driver)
-        result = DevicesPage.filterByIp(driver, self.ip)
-        print result
+        takeAction(result, Navigation.goToDevicesPage, driver)
+        if not result.success:
+            return result
 
-        end = time.time()
-        stat = {'elapsedTime': end - start}
+        takeAction(result, DevicesPage.filterByIp, driver, self.ip)
+        if not result.success:
+            return result
 
-        return {'success': True, 'stat': stat}
+        takeAction(result, DevicesPage.goToDeviceDetailPage, driver, self.ip)
+
+        return result
 
 def takeAction(result, action, *actionArgs):
     actionResult = action(*actionArgs)
