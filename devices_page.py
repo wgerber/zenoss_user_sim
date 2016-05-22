@@ -5,9 +5,13 @@ from common import *
 
 TITLE = 'Zenoss: Devices'
 locator = {'ipFilter': '#device_grid-filter-ipAddress-inputEl',
-           'deviceRows': "#device_grid-body table .x-grid-row"}
+           'deviceRows': "#device_grid-body table .x-grid-row",
+           'device': '.z-entity'}
 
+@timed
 def filterByIp(driver, ip):
+    result = ActionResult('filterByIp')
+
     find(driver, locator['ipFilter']).clear()
     find(driver, locator['ipFilter']).send_keys(ip)
     find(driver, locator['ipFilter']).send_keys(Keys.RETURN)
@@ -40,9 +44,15 @@ def filterByIp(driver, ip):
             except StaleElementReferenceException:
                 trial += 1
 
+    result.putData('devices', devices)
 
-    data = {'devices': devices}
+    return result
 
-    return {'success': True, 'data': data}
+@timed
+def goToDeviceDetailPage(driver, ip):
+    result = ActionResult('goToDevicesPage')
 
+    filterByIp(driver, ip)
+    find(driver, locator['device']).click()
 
+    return result
