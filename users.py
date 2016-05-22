@@ -68,6 +68,7 @@ class User(object):
     def log(self, message):
         logStr = "[%s] %s - %s\n" % (time.asctime(), self.name, message)
         self.logFile.write(logStr)
+        self.logFile.flush()
         print logStr[:-1]
 
     def screenshot(self, name):
