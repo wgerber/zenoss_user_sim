@@ -14,7 +14,7 @@ class assertPage(object):
 
     def __call__(self, f):
         def wrapper(*args, **kwargs):
-            assert self.title in args[0].title, \
+            assert self.title in args[0].driver.title, \
                 '{}() is called on the wrong page, {}.'.format(
                     f.__name__, self.title)
             return f(*args, **kwargs)
@@ -28,9 +28,9 @@ class assertPageAfter(object):
     def __call__(self, f):
         def wrapper(*args, **kwargs):
             result = f(*args, **kwargs)
-            assert self.title in args[0].title, \
-                'calling {}() moved driver to the wrong page, {}.'.format(
-                    f.__name__, args[0].title)
+            assert self.title in args[0].driver.title, \
+                'Called {}() and expected page "{}", but found page "{}".'.format(
+                    f.__name__, self.title, args[0].driver.title)
             return result
         return wrapper
 
@@ -72,7 +72,7 @@ class Result(object):
         k = '.'.join([self.name, k])
         self.stat[k] = v
 
-    def failResult(self, error):
+    def fail(self, error):
         self.success = False
         self.error = error
 
@@ -95,7 +95,7 @@ class WorkflowResult(Result):
             self.failedAction = result.name
             # fail this workflow with the error
             # of the failing action result
-            self.failResult(result.error)
+            self.fail(result.error)
         self.success *= result.success
         for k, v in result.stat.iteritems():
             k = '.'.join([self.name, k])

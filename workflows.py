@@ -5,11 +5,6 @@ import devices_page as DevicesPage
 import event_console_page as EventConsolePage
 import navigation as Navigation
 
-# Move this to sim driver
-ZENOSS_URL = 'https://zenoss5.zenoss-1310-d'
-ZENOSS_USERNAME = 'Young'
-ZENOSS_PASSWORD = 'Zenoss1234'
-
 class Workflow(object):
     def __init__(self, **kwargs):
         self.name = self.__class__.__name__
@@ -17,53 +12,29 @@ class Workflow(object):
 
 class LoginAndLogout(Workflow):
     @timed
-    def run(self, driver):
+    def run(self, user):
         workflowResult = WorkflowResult(self.name)
 
         baseURL = self.args["baseURL"]
         username = self.args["user"]
         password = self.args["password"]
 
-        # TODO - move this to some common actions page?
-        # TODO - this is essentially a page action and should
-        # not appear up here at the workflow level. this is a 
-        # bit messy because were creating the action result
-        # here
-        actionResult = ActionResult('navigateToZenoss')
-        try:
-            # navigate to base zenoss url / login page
-            driver.get(baseURL)
-        except:
-            # why we failed this particular action
-            actionResult.failResult("could not navigate to %s" % baseURL)
-            # NOTE - adding a failed action result to a workflow will
-            # fail the workflow and note which result caused the failure
-            workflowResult.addActionResult(actionResult)
-            # why we failed the entire workflow
-            traceback.print_exc()
+        result = takeAction(
+            workflowResult, LoginPage.login,
+            user, baseURL, username, password)
+        if not result.success:
+            return workflowResult
 
-        print "navigated to base url"
+        user.log("logged in (%is)" % result.stat["login.elapsedTime"])
 
-        try:
-            takeAction(
-                workflowResult, LoginPage.login,
-                driver, baseURL, username, password)
-        except:
-            workflowResult.failResult("unexpected failure in login") 
-            traceback.print_exc()
+        user.think(1)
 
-        print "logged in"
+        result = takeAction(workflowResult, Navigation.logout, user)
+        if not result.success:
+            return workflowResult
 
-        # TODO - user think
-
-        try:
-            takeAction(
-                workflowResult, Navigation.logout, driver)
-        except:
-            workflowResult.failResult("unexpected failure in logout") 
-            traceback.print_exc()
-
-        print "logged out"
+        user.log("logged out (%is)" % result.stat["logout.elapsedTime"])
+        user.log("success")
 
         return workflowResult
 
@@ -110,3 +81,4 @@ class CheckDevice(Workflow):
 def takeAction(result, action, *actionArgs):
     actionResult = action(*actionArgs)
     result.addActionResult(actionResult)
+    return actionResult
