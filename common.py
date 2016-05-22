@@ -1,4 +1,4 @@
-import time
+import time, pprint
 from collections import defaultdict
 
 from selenium import webdriver
@@ -67,6 +67,9 @@ class Result(object):
         self.success = True
         self.stat = {}
         self.error = ""
+
+    def __str__(self):
+        return pprint.pformat(self.__dict__, indent=4)
 
     def putStat(self, k, v):
         k = '.'.join([self.name, k])

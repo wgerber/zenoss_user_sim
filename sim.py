@@ -1,5 +1,4 @@
 import time, traceback, argparse
-import pprint
 from xvfbwrapper import Xvfb
 
 from workflows import *
@@ -52,20 +51,23 @@ def startUser(name, url, username, password, skill, logDir, chromedriver):
         AckEvents()])
     try:
         user.work()
-        resultsStr = ""
-        for result in user.results:
-            resultsStr += pprint.pformat(result.__dict__, indent=4)
-            resultsStr += ","
-        user.log(resultsStr)
     except:
         user.log("%s unexpectedly failed" % user.name)
         traceback.print_exc()
     finally:
+        #log results
+        resultsStr = ""
+        for result in user.results:
+            resultsStr += str(result)
+            resultsStr += ","
+        user.log(resultsStr)
         print "cleaning up"
         user.quit()
 
 if __name__ == '__main__':
     args = parse_args()
+
+    # TODO - log additional args
     print ("starting %i users with options:\n"
         "    url: %s\n"
         "    username: %s\n"
@@ -82,7 +84,6 @@ if __name__ == '__main__':
     # TODO - workflows
     startUser("bob", args.url, args.username, args.password, ADVANCED, args.logDir, args.chromedriver)
 
-    print "cleaning up"
     if args.headless:
         xvfb.stop()
 
