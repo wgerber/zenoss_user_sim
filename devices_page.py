@@ -9,23 +9,23 @@ locator = {'ipFilter': '#device_grid-filter-ipAddress-inputEl',
            'device': '.z-entity'}
 
 @timed
-def filterByIp(driver, ip):
+def filterByIp(user, ip):
     result = ActionResult('filterByIp')
 
-    find(driver, locator['ipFilter']).clear()
-    find(driver, locator['ipFilter']).send_keys(ip)
-    find(driver, locator['ipFilter']).send_keys(Keys.RETURN)
+    find(user.driver, locator['ipFilter']).clear()
+    find(user.driver, locator['ipFilter']).send_keys(ip)
+    find(user.driver, locator['ipFilter']).send_keys(Keys.RETURN)
 
     # Return retrieved list
     try:
         timeout = 10
-        element = WebDriverWait(driver, timeout).until(
+        element = WebDriverWait(user.driver, timeout).until(
             EC.presence_of_all_elements_located((By.CSS_SELECTOR, locator['deviceRows'])))
     except TimeoutException:
         print "Device rows did not appear in {} secs.".format(timeout)
         return False
 
-    deviceRows = findMany(driver, locator['deviceRows'])
+    deviceRows = findMany(user.driver, locator['deviceRows'])
     devices = []
     for el in deviceRows:
         trial = 1
@@ -49,10 +49,10 @@ def filterByIp(driver, ip):
     return result
 
 @timed
-def goToDeviceDetailPage(driver, ip):
+def goToDeviceDetailPage(user, ip):
     result = ActionResult('goToDevicesPage')
 
-    filterByIp(driver, ip)
-    find(driver, locator['device']).click()
+    filterByIp(user, ip)
+    find(user.driver, locator['device']).click()
 
     return result

@@ -1,5 +1,5 @@
 import time, traceback
-from pprint import pprint
+import pprint
 from xvfbwrapper import Xvfb
 
 from workflows import *
@@ -8,7 +8,7 @@ from users import *
 # TODO - configure from command line
 ZENOSS_URL = 'https://zenoss5.graveyard.zenoss.loc'
 ZENOSS_USERNAME = 'zenny'
-ZENOSS_PASSWORD = '***'
+ZENOSS_PASSWORD = 'Z3n0ss123'
 CHROMEDRIVER = '/home/jay/.local/bin/chromedriver'
 LOG_DIR = "/home/jay/tmp"
 headless = True
@@ -19,17 +19,17 @@ if headless:
 
 if __name__ == '__main__':
     # TODO - spin up n users
-    bob = User("bob", skill=ADVANCED, logDir=LOG_DIR, chromedriver=CHROMEDRIVER)
-    login = LoginAndLogout(baseURL=ZENOSS_URL, user=ZENOSS_USERNAME, password=ZENOSS_PASSWORD)
-    #ackEvents = AckEvents()
-    #bob.addWorkflow([login, ackEvents])
-    bob.addWorkflow([login])
+    bob = User("bob", url=ZENOSS_URL, username=ZENOSS_USERNAME, password=ZENOSS_PASSWORD,
+            skill=ADVANCED, logDir=LOG_DIR, chromedriver=CHROMEDRIVER)
+    login = LoginAndLogout()
+    checkDevice = CheckDevice("10.87.128.58")
+    bob.addWorkflow([login, checkDevice])
     try:
         bob.work()
-        bob.log("all workflows complete")
-        print bob.stat
+        resultsStr = ""
         for result in bob.results:
-            pprint(result)
+            resultsStr += pprint.pformat(result.__dict__, indent=4)
+        bob.log(resultsStr)
     except:
         bob.log("unexpected failure running work")
         traceback.print_exc()

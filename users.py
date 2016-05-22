@@ -12,8 +12,11 @@ INTERMEDIATE = 1
 ADVANCED = 0.5
 
 class User(object):
-    def __init__(self, name, skill=INTERMEDIATE, logDir=None, chromedriver=None):
+    def __init__(self, name, url, username, password, skill=INTERMEDIATE, logDir=None, chromedriver=None):
         self.name = name
+        self.url = url
+        self.username = username
+        self.password = password
         self.skill = skill
         if logDir:
             self.logDir = "%s/%s" % (logDir, time.time())
@@ -27,18 +30,21 @@ class User(object):
         # TODO - remove implicit wait eventually
         self.driver.implicitly_wait(10)
         self.workflows = []
-        # TODO - stat and results can probably be the same thing
-        self.stat = {}
         self.results = []
 
     def work(self):
+        self.log("beginning work")
         for workflow in self.workflows:
+            self.log("beginning workflow %s" % workflow.name)
             result = workflow.run(self)
-            self.stat.update(result.stat)
             self.results.append(result)
             if not result.success:
-                print 'User quits while doing {}'.format(workflow.name)
+                print 'workflow {} failed, user {} quitting'.format(workflow.name, self.name)
                 self.quit()
+            else:
+                self.log("workflow %s successful (%is)" % (workflow.name, result.stat[workflow.name + ".elapsedTime"]))
+        totalTime = reduce(lambda acc,w: w.stat[w.name + ".elapsedTime"] + acc, self.results, 0)
+        self.log("all workflows complete (%is)" % totalTime)
 
     def quit(self):
         self.driver.quit()

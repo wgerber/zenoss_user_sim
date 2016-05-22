@@ -8,35 +8,33 @@ import navigation as Navigation
 class Workflow(object):
     def __init__(self, **kwargs):
         self.name = self.__class__.__name__
-        self.args = kwargs
 
 class LoginAndLogout(Workflow):
     @timed
     def run(self, user):
-        workflowResult = WorkflowResult(self.name)
+        result = WorkflowResult(self.name)
 
-        baseURL = self.args["baseURL"]
-        username = self.args["user"]
-        password = self.args["password"]
+        baseURL = user.url
+        username = user.username
+        password = user.password
 
-        result = takeAction(
-            workflowResult, LoginPage.login,
+        takeAction(
+            result, LoginPage.login,
             user, baseURL, username, password)
         if not result.success:
-            return workflowResult
+            return result
 
-        user.log("logged in (%is)" % result.stat["login.elapsedTime"])
+        user.log("logged in (%is)" % result.stat["LoginAndLogout.login.elapsedTime"])
 
         user.think(1)
 
-        result = takeAction(workflowResult, Navigation.logout, user)
+        takeAction(result, Navigation.logout, user)
         if not result.success:
-            return workflowResult
+            return result
 
-        user.log("logged out (%is)" % result.stat["logout.elapsedTime"])
-        user.log("success")
+        user.log("logged out (%is)" % result.stat["LoginAndLogout.logout.elapsedTime"])
 
-        return workflowResult
+        return result
 
 class AckEvents(Workflow):
     @timed
@@ -63,18 +61,34 @@ class CheckDevice(Workflow):
         self.ip = ip
 
     @timed
-    def run(self, driver):
+    def run(self, user):
         result = WorkflowResult(self.name)
 
-        takeAction(result, Navigation.goToDevicesPage, driver)
+        baseURL = user.url
+        username = user.username
+        password = user.password
+
+        takeAction(
+            result, LoginPage.login,
+            user, baseURL, username, password)
         if not result.success:
             return result
 
-        takeAction(result, DevicesPage.filterByIp, driver, self.ip)
+        user.log("logged in (%is)" % result.stat["CheckDevice.login.elapsedTime"])
+
+        user.think(1)
+
+        takeAction(result, Navigation.goToDevicesPage, user)
         if not result.success:
             return result
 
-        takeAction(result, DevicesPage.goToDeviceDetailPage, driver, self.ip)
+        user.think(1)
+
+        takeAction(result, DevicesPage.filterByIp, user, self.ip)
+        if not result.success:
+            return result
+
+        takeAction(result, DevicesPage.goToDeviceDetailPage, user, self.ip)
 
         return result
 
