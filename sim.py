@@ -1,4 +1,5 @@
 import time, traceback, argparse
+from threading import Thread
 from xvfbwrapper import Xvfb
 
 from workflows import *
@@ -40,8 +41,12 @@ def parse_args():
     else:
         return args
 
-def startUser(name, url, username, password, skill, logDir, chromedriver):
-    user = User("bob", url=url, username=username, password=password,
+def startUser(name, url, username, password, headless, skill, logDir, chromedriver):
+    if headless:
+        xvfb = Xvfb(width=1100, height=800)
+        xvfb.start()
+
+    user = User(name, url=url, username=username, password=password,
             skill=skill, logDir=logDir, chromedriver=chromedriver)
 
     # TODO - configure workflow
@@ -63,6 +68,7 @@ def startUser(name, url, username, password, skill, logDir, chromedriver):
         user.log(resultsStr)
         print "cleaning up"
         user.quit()
+        xvfb.stop()
 
 if __name__ == '__main__':
     args = parse_args()
@@ -75,15 +81,14 @@ if __name__ == '__main__':
         "    logDir: %s") % (
             args.users, args.url, args.username, "True" if args.headless else "False", args.logDir)
 
-    if args.headless:
-        xvfb = Xvfb(width=1100, height=800)
-        xvfb.start()
-
-    # TODO - spin up n users
-    # TODO - skill level
-    # TODO - workflows
-    startUser("bob", args.url, args.username, args.password, ADVANCED, args.logDir, args.chromedriver)
-
-    if args.headless:
-        xvfb.stop()
-
+    threads = []
+    for i in xrange(args.users):
+        # TODO - skill level
+        # TODO - workflows
+        t = Thread(target=startUser, args=(
+            "bob%i"%i, args.url, args.username, args.password, args.headless, ADVANCED, args.logDir, args.chromedriver))
+        threads.append(t)
+        t.start()
+        # give xvfb time to grab a display before kicking off
+        # a new request
+        time.sleep(0.2)
