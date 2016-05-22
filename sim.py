@@ -8,7 +8,7 @@ from users import *
 # TODO - configure from command line
 ZENOSS_URL = 'https://zenoss5.graveyard.zenoss.loc'
 ZENOSS_USERNAME = 'zenny'
-ZENOSS_PASSWORD = 'Z3n0ss123'
+ZENOSS_PASSWORD = '***'
 CHROMEDRIVER = '/home/jay/.local/bin/chromedriver'
 LOG_DIR = "/home/jay/tmp"
 headless = True
@@ -21,14 +21,16 @@ if __name__ == '__main__':
     # TODO - spin up n users
     bob = User("bob", url=ZENOSS_URL, username=ZENOSS_USERNAME, password=ZENOSS_PASSWORD,
             skill=ADVANCED, logDir=LOG_DIR, chromedriver=CHROMEDRIVER)
-    login = LoginAndLogout()
-    checkDevice = CheckDevice("10.87.128.58")
-    bob.addWorkflow([login, checkDevice])
+    bob.addWorkflow([
+        LoginAndLogout(),
+        CheckDevice("10.87.128.58"),
+        AckEvents()])
     try:
         bob.work()
         resultsStr = ""
         for result in bob.results:
             resultsStr += pprint.pformat(result.__dict__, indent=4)
+            resultsStr += ","
         bob.log(resultsStr)
     except:
         bob.log("unexpected failure running work")

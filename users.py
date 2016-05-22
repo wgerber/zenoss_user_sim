@@ -31,6 +31,7 @@ class User(object):
         self.driver.implicitly_wait(10)
         self.workflows = []
         self.results = []
+        self.hasQuit = False
 
     def work(self):
         self.log("beginning work")
@@ -47,8 +48,10 @@ class User(object):
         self.log("all workflows complete (%is)" % totalTime)
 
     def quit(self):
-        self.driver.quit()
-        self.logFile.close()
+        if not self.hasQuit:
+            self.hasQuit = True
+            self.driver.quit()
+            self.logFile.close()
 
     def addWorkflow(self, workflow):
         assert isinstance(workflow, list) or isinstance(workflow, Workflow),\
@@ -71,5 +74,3 @@ class User(object):
         filename = self.logDir + "/%s-%s-screen.png" % (self.name, name)
         self.driver.save_screenshot(filename)
         return filename
-
-    # TODO - screenshots
