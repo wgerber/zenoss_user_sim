@@ -68,7 +68,8 @@ def startUser(name, url, username, password, headless, skill, logDir, chromedriv
         user.log(resultsStr)
         print "cleaning up"
         user.quit()
-        xvfb.stop()
+        if headless:
+            xvfb.stop()
 
 if __name__ == '__main__':
     args = parse_args()
