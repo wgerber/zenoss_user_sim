@@ -92,7 +92,7 @@ if __name__ == '__main__':
         # TODO - skill level
         # TODO - workflows
         t = Thread(target=startUser, args=(
-            "bob%i"%i, args.url, args.username, args.password, args.headless, ADVANCED, argslogDir, args.chromedriver))
+            "bob%i"%i, args.url, args.username, args.password, args.headless, ADVANCED, args.logDir, args.chromedriver))
         threads.append(t)
         t.start()
         # give xvfb time to grab a display before kicking off
