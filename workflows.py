@@ -97,6 +97,10 @@ class CheckDevice(Workflow):
                 return result
 
             takeAction(result, DeviceDetailPage.getEvents, user, None, True)
+            if not result.success:
+                return result
+
+            takeAction(result, DeviceDetailPage.lookAtGraphs, user)
 
         return result
 

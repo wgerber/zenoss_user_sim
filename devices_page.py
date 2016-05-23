@@ -53,7 +53,9 @@ def filterByIp(user, ip):
 def goToDeviceDetailPage(user, ip):
     result = ActionResult('goToDeviceDetailPage')
 
-    filterByIp(user, ip)
-    find(user.driver, locator['device']).click()
+    actionResult = filterByIp(user, ip)
+    if actionResult.data['filterByIp.devices']:
+        find(user.driver, locator['device']).click()
+        assert ip in user.driver.title
 
     return result

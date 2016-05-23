@@ -31,3 +31,12 @@ def getEvents(user, sortedBy, ascending):
     result.putData('events', events)
 
     return result
+
+@timed
+def lookAtGraphs(user):
+    result = ActionResult('lookAtGraphs')
+
+    navButtons = findMany(user.driver, '#deviceDetailNav-body table .x-grid-row')
+    navButtons[8].click() # Click the Graphs button
+
+    return result
