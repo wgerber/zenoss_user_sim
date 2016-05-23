@@ -4,6 +4,7 @@ import login_page as LoginPage
 import devices_page as DevicesPage
 import event_console_page as EventConsolePage
 import navigation as Navigation
+import device_detail_page as DeviceDetailPage
 
 class Workflow(object):
     def __init__(self, **kwargs):
@@ -86,11 +87,16 @@ class CheckDevice(Workflow):
 
         user.think(1)
 
-        takeAction(result, DevicesPage.filterByIp, user, self.ip)
+        actionResult = takeAction(result, DevicesPage.filterByIp, user, self.ip)
         if not result.success:
             return result
 
-        takeAction(result, DevicesPage.goToDeviceDetailPage, user, self.ip)
+        if actionResult.data['filterByIp.devices']:
+            takeAction(result, DevicesPage.goToDeviceDetailPage, user, self.ip)
+            if not result.success:
+                return result
+
+            takeAction(result, DeviceDetailPage.getEvents, user, None, True)
 
         return result
 

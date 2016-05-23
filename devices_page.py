@@ -11,40 +11,41 @@ locator = {'ipFilter': '#device_grid-filter-ipAddress-inputEl',
 @timed
 def filterByIp(user, ip):
     result = ActionResult('filterByIp')
-
-    find(user.driver, locator['ipFilter']).clear()
-    find(user.driver, locator['ipFilter']).send_keys(ip)
-    find(user.driver, locator['ipFilter']).send_keys(Keys.RETURN)
-
-    # Return retrieved list
     try:
-        timeout = 10
-        element = WebDriverWait(user.driver, timeout).until(
-            EC.presence_of_all_elements_located((By.CSS_SELECTOR, locator['deviceRows'])))
-    except TimeoutException:
-        print "Device rows did not appear in {} secs.".format(timeout)
-        return False
+        find(user.driver, locator['ipFilter']).clear()
+        find(user.driver, locator['ipFilter']).send_keys(ip)
+        find(user.driver, locator['ipFilter']).send_keys(Keys.RETURN)
+    except Exception:
+        result.success = False
+        return resut
 
-    deviceRows = findMany(user.driver, locator['deviceRows'])
-    devices = []
-    for el in deviceRows:
-        trial = 1
-        maxTrial = 3
-        while trial <= maxTrial:
-            try:
-                devices.append({
-                   "name": findIn(el, ".x-grid-cell-name").text,
-                   "snmpSysName": findIn(el, ".x-grid-cell-snmpSysName").text,
-                   "productionState": findIn(el, ".x-grid-cell-productionState").text,
-                   "serialNumber": findIn(el, ".x-grid-cell-serialNumber").text,
-                   "priority": findIn(el, ".x-grid-cell-priority").text,
-                   "worstevents": findIn(el, ".x-grid-cell-worstevents").text,
-                })
-                break
-            except StaleElementReferenceException:
-                trial += 1
-
-    result.putData('devices', devices)
+    try:
+        deviceRows = findMany(user.driver, locator['deviceRows'])
+        devices = []
+        for el in deviceRows:
+            trial = 1
+            maxTrial = 3
+            while trial <= maxTrial:
+                try:
+                    devices.append({
+                       "name": findIn(el, ".x-grid-cell-name").text,
+                       "snmpSysName": findIn(el, ".x-grid-cell-snmpSysName").text,
+                       "productionState": findIn(el, ".x-grid-cell-productionState").text,
+                       "serialNumber": findIn(el, ".x-grid-cell-serialNumber").text,
+                       "priority": findIn(el, ".x-grid-cell-priority").text,
+                       "worstevents": findIn(el, ".x-grid-cell-worstevents").text,
+                    })
+                    break
+                except StaleElementReferenceException:
+                    trial += 1
+                    devices = []
+            if trial > maxTrial:
+                result.success = False
+                return result
+    except Exception:
+        result.success = False
+    finally:
+        result.putData('devices', devices)
 
     return result
 
