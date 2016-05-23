@@ -88,7 +88,7 @@ def findIn(el, selector):
 def findManyIn(el, selector):
     return el.find_elements_by_css_selector(selector)
 
-def wait(d, fn, time=10):
+def wait(d, fn, time=DEFAULT_TIMEOUT):
     return WebDriverWait(d, time).until(fn)
 
 # get name of current function
