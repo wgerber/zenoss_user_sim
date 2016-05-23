@@ -25,7 +25,7 @@ def goToDevicesPage(user):
     time.sleep(2) # wait pop-up
     find(user.driver, locator['infrastructure']).click()
 
-    result = Result('goToDevicePage')
+    result = Result('goToDevicesPage')
     elapsedTime = time.time() - start
     result.putStat('elapsedTime', elapsedTime)
 
@@ -37,6 +37,7 @@ def logout(user):
     result = ActionResult("logout")
 
     try:
+        time.sleep(3) # Temporary workaround for pop-up on Young's computer
         logout_link = find(user.driver, locator["logoutLink"])
         logout_link.click()
     except:

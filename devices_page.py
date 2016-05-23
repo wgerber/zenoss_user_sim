@@ -50,7 +50,7 @@ def filterByIp(user, ip):
 
 @timed
 def goToDeviceDetailPage(user, ip):
-    result = ActionResult('goToDevicesPage')
+    result = ActionResult('goToDeviceDetailPage')
 
     filterByIp(user, ip)
     find(user.driver, locator['device']).click()
