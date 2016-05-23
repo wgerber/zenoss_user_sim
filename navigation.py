@@ -18,16 +18,14 @@ def goToEventConsole(user):
 
     return result
 
+@timed
 @assertPageAfter('Zenoss: Devices')
 def goToDevicesPage(user):
-    start = time.time()
     # TODO - use clean workaround
     time.sleep(2) # wait pop-up
     find(user.driver, locator['infrastructure']).click()
 
-    result = Result('goToDevicesPage')
-    elapsedTime = time.time() - start
-    result.putStat('elapsedTime', elapsedTime)
+    result = ActionResult('goToDevicesPage')
 
     return result
 
