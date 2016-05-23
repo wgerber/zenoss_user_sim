@@ -46,3 +46,9 @@ The next two steps are to filter and sort the events. These are page actions of 
 The final step is to look at the results. The EventPage can return a list of visible events, and the workflow can iterate through them and make choices about what to do with them. For instance, the current user might be named "Bob", and an event summary might say "BOB LOOK AT THIS RIGHT NOW". The workflow can choose then to view the details of the event. In the same way a user might take a few moments to gather info with their eyeballs, our user simulator can take a few moments to think. Intentional pauses like this makes the user more authentic in that more idle time occurs where the UI is still making requests to the backend and putting load on the server.
 
 Note that the concept of the web browser is entirely encapsulated in page actions. No WebElements, selenium exceptions or other webby things should make it outside of Pages and page actions.
+
+## Some Notes
+**Pages**
+* Inside of pages, use the `find`, `findMany`, `wait` and similar helper functions instead of directly calling selenium methods. Maintaining page actions when the framework changes will be much simpler.
+* Write page actions in a way that does not indicate that they do browser-y stuff. Bad page action: `clickAcknowledgeButton`. Good page action `acknowledgeEvent`.
+* A page action should not return until it is sure the page is ready. Find some DOM element or something to look for to ensure the page is actually ready and not merely loaded

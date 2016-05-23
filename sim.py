@@ -3,6 +3,7 @@ from threading import Thread
 from xvfbwrapper import Xvfb
 
 from workflows import *
+from what_happened_workflow import WhatHappenedLastNight
 from users import *
 
 def parse_args():
@@ -41,13 +42,13 @@ def parse_args():
     else:
         return args
 
-def startUser(name, url, username, password, headless, skill, logDir, chromedriver):
+def startUser(name, url, username, password, headless, logDir, chromedriver):
     if headless:
         xvfb = Xvfb(width=1100, height=800)
         xvfb.start()
 
     user = User(name, url=url, username=username, password=password,
-            skill=skill, logDir=logDir, chromedriver=chromedriver)
+            logDir=logDir, chromedriver=chromedriver)
 
     # TODO - configure workflow
     user.addWorkflow([
@@ -92,7 +93,7 @@ if __name__ == '__main__':
         # TODO - skill level
         # TODO - workflows
         t = Thread(target=startUser, args=(
-            "bob%i"%i, args.url, args.username, args.password, args.headless, ADVANCED, args.logDir, args.chromedriver))
+            "bob%i"%i, args.url, args.username, args.password, args.headless, args.logDir, args.chromedriver))
         threads.append(t)
         t.start()
         # give xvfb time to grab a display before kicking off

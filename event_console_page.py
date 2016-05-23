@@ -22,27 +22,73 @@ locator = {'severityBtn': (By.ID, 'events_grid-filter-severity-btnEl'),
            'eventStateElement': '.x-grid-cell-eventState',
            'eventState': {'new': '.status-icon-small-new'}}
 
+elements = {"severityBtn": "#events_grid-filter-severity-btnEl",
+            "eventsTable": "#events_grid .x-grid-table",
+            "lastSeenHeader": "#lastTime"
+            }
+
+@timed
 @assertPage(TITLE)
 def filterBySeverity(user, severity):
-    result = ActionResult('ackAll')
-    start = time.time()
-
+    result = ActionResult(whoami())
+    severities = ["critical", "error", "warning", "info", "debug", "clear"]
     time.sleep(3) # Wait until the pop-up disappears.
 
-    try:
-        element = 'severityBtn'
-        timeout = 3
-        WebDriverWait(user.driver, timeout).until(
-            EC.presence_of_element_located(locator[element]))
-    except TimeoutException:
-        print '{} did not appear in {} secs'.format(element, timeout)
-        result.success = False
-        return result
+    # TODO - handle exceptions
+    sevButton = find(user.driver, elements["severityBtn"])
+    sevButton.click()
 
-    user.driver.find_element(*locator['severityBtn']).click()
+    # NOTE - assumes just one x-menu is visible
+    sevEls = findMany(user.driver, ".x-menu .x-menu-item")
 
-    elapsedTime = time.time() - start
-    result.putStat('elapsedTime', elapsedTime)
+    changedFilter = False
+    for el in sevEls:
+        currentSev = el.text.strip().lower()
+        # ensure this is an actual severity menu item
+        if currentSev in severities:
+            isChecked = False if ("unchecked" in el.get_attribute("class")) else True
+            # if this is checked and it should not be,
+            # click it to uncheck it
+            if isChecked and currentSev != severity:
+                el.click()
+                changedFilter = True
+                user.think(1)
+            # if this is not checked but it should
+            # be, then click it
+            elif not isChecked and currentSev == severity:
+                el.click()
+                changedFilter = True
+                user.think(1)
+
+    # if the filter was changed, wait for the event table
+    # to go stale
+    if changedFilter:
+        eventsTable = find(user.driver, elements["eventsTable"])
+        wait(user.driver, EC.staleness_of(eventsTable), 20)
+
+    return result
+
+@timed
+@assertPage(TITLE)
+def sortByLastSeen(user, newSortDir):
+    result = ActionResult(whoami())
+    newSortDir = "ASC" if newSortDir == "ascending" else "DESC"
+    sortDir = None
+
+    # TODO - break this after n seconds
+    while sortDir != newSortDir:
+        header = find(user.driver, elements["lastSeenHeader"])
+        headerClass = header.get_attribute("class")
+        if "x-column-header-sort" in headerClass:
+            headerSortClass = [x for x in headerClass.split(" ") if x.startswith("x-column-header-sort-")][0]
+            sortDir = headerSortClass.replace("x-column-header-sort-", "")
+            if sortDir == "null":
+                sortDir = None
+        eventsTable = find(user.driver, elements["eventsTable"])
+        header.click()
+        user.think(1)
+        # wait until event table updates
+        wait(user.driver, EC.staleness_of(eventsTable))
 
     return result
 
