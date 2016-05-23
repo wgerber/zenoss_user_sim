@@ -66,12 +66,17 @@ def startUser(name, url, username, password, headless, skill, logDir, chromedriv
             resultsStr += str(result)
             resultsStr += ","
         user.log(resultsStr)
-        print "cleaning up"
+        print "cleaning up %s" % user.name
         user.quit()
         xvfb.stop()
 
 if __name__ == '__main__':
     args = parse_args()
+
+    # create a folder for this run
+    args.logDir = "%s/%s" % (args.logDir, time.time())
+    if not os.path.exists(args.logDir):
+        os.makedirs(args.logDir)
 
     # TODO - log additional args
     print ("starting %i users with options:\n"
@@ -86,9 +91,10 @@ if __name__ == '__main__':
         # TODO - skill level
         # TODO - workflows
         t = Thread(target=startUser, args=(
-            "bob%i"%i, args.url, args.username, args.password, args.headless, ADVANCED, args.logDir, args.chromedriver))
+            "bob%i"%i, args.url, args.username, args.password, args.headless, ADVANCED, argslogDir, args.chromedriver))
         threads.append(t)
         t.start()
         # give xvfb time to grab a display before kicking off
         # a new request
         time.sleep(0.2)
+    # TODO - wait till all threads are done and log a message
