@@ -1,5 +1,5 @@
-import time, pprint
-from collections import defaultdict
+import time, pprint, inspect
+from functools import wraps
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -8,11 +8,14 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 
+DEFAULT_TIMEOUT = 10
+
 class assertPage(object):
     def __init__(self, title):
         self.title = title
 
     def __call__(self, f):
+        @wraps(f)
         def wrapper(*args, **kwargs):
             assert self.title in args[0].driver.title, \
                 '{}() is called on the wrong page, {}.'.format(
@@ -26,6 +29,7 @@ class assertPageAfter(object):
         self.title = title
 
     def __call__(self, f):
+        @wraps(f)
         def wrapper(*args, **kwargs):
             result = f(*args, **kwargs)
             assert self.title in args[0].driver.title, \
@@ -35,6 +39,7 @@ class assertPageAfter(object):
         return wrapper
 
 def timed(f):
+    @wraps(f)
     def wrapper(*args, **kwargs):
         start = time.time()
         result = f(*args, **kwargs)
@@ -46,11 +51,36 @@ def timed(f):
         return result
     return wrapper
 
+def screenshot(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        # NOTE - assumes user is first or second arg
+        user = None
+        if hasattr(args[0], "screenshot"):
+            user = args[0]
+        elif hasattr(args[1], "screenshot"):
+            user = args[1]
+        try:
+            result = f(*args, **kwargs)
+        except:
+            if user:
+                screen = user.screenshot(f.__name__)
+                user.log("screenshot saved as %s" % screen)
+            raise
+        if not result.success:
+            if user:
+                screen = user.screenshot(f.__name__)
+                user.log("screenshot saved as %s" % screen)
+        return result
+    return wrapper
+
 def find(d, selector):
-    return d.find_element_by_css_selector(selector)
+    # NOTE - returns invisible elements as well
+    return wait(d, EC.presence_of_element_located((By.CSS_SELECTOR, selector)), DEFAULT_TIMEOUT)
 
 def findMany(d, selector):
-    return d.find_elements_by_css_selector(selector)
+    # NOTE - returns invisible elements as well
+    return wait(d, EC.presence_of_all_elements_located((By.CSS_SELECTOR, selector)), DEFAULT_TIMEOUT)
 
 def findIn(el, selector):
     return el.find_element_by_css_selector(selector)
@@ -58,11 +88,12 @@ def findIn(el, selector):
 def findManyIn(el, selector):
     return el.find_elements_by_css_selector(selector)
 
-def merge(d1, d2):
-    """Merge two dictionaries. The latter argument overwrites the former."""
-    result = d1.copy()
-    result.update(d2)
-    return result
+def wait(d, fn, time=10):
+    return WebDriverWait(d, time).until(fn)
+
+# get name of current function
+def whoami():
+    return inspect.stack()[1][3]
 
 class Result(object):
     def __init__(self, name):

@@ -10,9 +10,10 @@ from workflows import Workflow
 BEGINNER = 1.5
 INTERMEDIATE = 1
 ADVANCED = 0.5
+GODLIKE = 0
 
 class User(object):
-    def __init__(self, name, url, username, password, skill=INTERMEDIATE, logDir="", chromedriver=None):
+    def __init__(self, name, url, username, password, skill=GODLIKE, logDir="", chromedriver=None):
         self.name = name
         self.url = url
         self.username = username
@@ -24,8 +25,6 @@ class User(object):
             self.driver = webdriver.Chrome(chromedriver)
         else:
             self.driver = webdriver.Chrome()
-        # TODO - remove implicit wait eventually
-        self.driver.implicitly_wait(10)
         self.workflows = []
         self.results = []
         self.hasQuit = False
