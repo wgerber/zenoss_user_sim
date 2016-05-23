@@ -56,6 +56,7 @@ def goToDeviceDetailPage(user, ip):
     actionResult = filterByIp(user, ip)
     if actionResult.data['filterByIp.devices']:
         find(user.driver, locator['device']).click()
+        time.sleep(3) # TODO: Wait properly.
         assert ip in user.driver.title
 
     return result

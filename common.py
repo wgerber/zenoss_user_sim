@@ -55,6 +55,9 @@ def findMany(d, selector):
 def findIn(el, selector):
     return el.find_element_by_css_selector(selector)
 
+def findManyIn(el, selector):
+    return el.find_elements_by_css_selector(selector)
+
 def merge(d1, d2):
     """Merge two dictionaries. The latter argument overwrites the former."""
     result = d1.copy()
