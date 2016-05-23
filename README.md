@@ -1,31 +1,48 @@
 # Zenoss User Simulator
-This tool simulators user actions against the Zenoss UI. It also provides convenient ways to store and retrieve stats about the simulated user experience. 
+This tool simulators user actions against the Zenoss UI. It also provides convenient ways to store and retrieve stats about the simulated user experience.
 
 ## Usage
-You will need Xvfb, chromedriver and chrome installed as well as python and pip.
+A Dockerfile is included that will build an image which can point simulated users at a Zenoss instance. First build the Dockerfile
 
-And, you should `pip install selenium xfvb-wrapper` to get the required deps.
+    docker build -t zenoss/usersim:v1 .
 
-Once that's in order, try `python sim.py` to kick things off.
+Once the build is complete, the image can be launched and command line arguments passed in
 
-[TODO - dockerfile, command line args]
+    docker run --privileged -t \
+        -v $(pwd)/log:/root/log \
+        -v /dev/shm:/dev/shm \
+        -v /etc/hosts:/etc/hosts \
+        zenoss/usersim:v1 \
+        -u https://zenoss5.graveyard.zenoss.loc \
+        -n zenny \
+        -p ****** \
+        -c 10 \
+        --log-dir ./log
+
+Note that this image must be run as `privileged` and `/dev/shm` must be bindmounted for chrome to work properly. Mounting `/etc/hosts` into the image is useful because the Zenoss instance may only be reachable by hostname
+
+To run directly in python, install dependencies (Xvfb and chromdriver for the OS, and selenium and xvfbwrapper for python), then kick it off with
+
+    python sim.py \
+        -u https://zenoss5.graveyard.zenoss.loc \
+        -n zenny \
+        -p ****** \
+        -c 10 \
+        --log-dir /tmp/
+
+For configuration options, try `python sim.py --help` or `docker run zenoss/usersim:v1`.
 
 ## Tell me more!
-This tool functions similarly to an automated test runner but attempts to behave more like a user than an automated test. It focuses on defining user workflows that don't know or care about how a thing is done, but just that the user wants to do that thing. A workflow performs work through page actions, which are functions that encapsulate the details of performing the action against a page in the UI. When a page action is performed, stats about that page action can be pushed up to the workflow, providing a way to track the UI and user's performance.
+Zenoss User Simulator is similar to a functional test runner, but aims to perform specific tasks and workflows at a more general level rather than verify that specific details behave in an expected way. A **User** is given a list of **Workflows** to perform. Each Workflow interacts with one or more **Pages**. Pages know precisely how to accomplish a task, and return **Results** indicating, among other details, if the task was successful or not.
 
-### User
-[TODO]
+For example, a user workflow may be to review all critical events that occurred overnight. The workflow tasks could be: view events, filter to show only critical severity, sort by last seen, look at results.
 
-### Pages
-Pages are a collection of functions called page actions. Page actions represent a task that a page can perform, eg: display a list of devices or acknowledge an event. It is important to note that page actions should be actions that make sense by themselves, outside of a web page. For example, a good action is "acknowledge event". A bad action is "click acknowledge button" as this leaks the implementation of the action (button clicks in a web page).
+Viewing the events is a page action that breaks down to navigating to the events page. This is part of the NavigationPage (an unusual page in that it is always present). The workflow doesn't need to know the details of how to view events, just that it can tell the navigation page to take us there.
 
-To enforce this separation of concerns, pages are also the only place the selenium, the web browser, and the DOM should exist and be addressed.
+Once the page action has completed, a result is returned. The result encapsulates success, stats and an optional error message. It is up to the workflow to decide how to act if the result is not successful.
 
-Page actions should throw errors in the case of unexpected failures, or catch errors and return failed Results.
+The next two steps are to filter and sort the events. These are page actions of the EventPage, so the workflow calls each and the page action returns results.
 
-### Workflow
-A workflow is collection of actions that a user performs in order to accomplish a particular goal. For example, a user may want to catch up on what events were created overnight, so he may navigate to the event page, filter to show only critical events, then sort by last seen.
+The final step is to look at the results. The EventPage can return a list of visible events, and the workflow can iterate through them and make choices about what to do with them. For instance, the current user might be named "Bob", and an event summary might say "BOB LOOK AT THIS RIGHT NOW". The workflow can choose then to view the details of the event. In the same way a user might take a few moments to gather info with their eyeballs, our user simulator can take a few moments to think. Intentional pauses like this makes the user more authentic in that more idle time occurs where the UI is still making requests to the backend and putting load on the server.
 
-Workflows should be completely unaware of the underlying web browser implementation of the actions, and should solely be concerned with the actions themselves. Workflows should also be prepared to catch errors during any page actions, and handle them appropriatly. Workflows should only raise exceptions if things get real bad.A
-
-A Workflow returns a WorkflowResult, which contains a list of page action results and stats. The stats can be arbitrarily defined.
+Note that the concept of the web browser is entirely encapsulated in page actions. No WebElements, selenium exceptions or other webby things should make it outside of Pages and page actions.
