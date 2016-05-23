@@ -12,17 +12,14 @@ INTERMEDIATE = 1
 ADVANCED = 0.5
 
 class User(object):
-    def __init__(self, name, url, username, password, skill=INTERMEDIATE, logDir=None, chromedriver=None):
+    def __init__(self, name, url, username, password, skill=INTERMEDIATE, logDir="", chromedriver=None):
         self.name = name
         self.url = url
         self.username = username
         self.password = password
         self.skill = skill
-        if logDir:
-            self.logDir = "%s/%s" % (logDir, time.time())
-            if not os.path.exists(self.logDir):
-                os.makedirs(self.logDir)
-            self.logFile = open(self.logDir + "/%s.log" % self.name, "w")
+        self.logDir = logDir
+        self.logFile = open(self.logDir + "/%s.log" % self.name, "w")
         if chromedriver:
             self.driver = webdriver.Chrome(chromedriver)
         else:
