@@ -21,7 +21,7 @@ Once the build is complete, the image can be launched and command line arguments
 
 Note that this image must be run as `privileged` and `/dev/shm` must be bindmounted for chrome to work properly. Mounting `/etc/hosts` into the image is useful because the Zenoss instance may only be reachable by hostname
 
-To run directly in python, install dependencies (Xvfb and chromdriver for the OS, and selenium and xvfbwrapper for python), then kick it off with
+To run directly in python, install dependencies (`Xvfb` and `chromedriver` for the OS, and `selenium` and `xvfbwrapper` for python), then kick it off with:
 
     python sim.py \
         -u https://zenoss5.graveyard.zenoss.loc \

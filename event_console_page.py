@@ -24,7 +24,8 @@ locator = {'severityBtn': (By.ID, 'events_grid-filter-severity-btnEl'),
 
 elements = {"severityBtn": "#events_grid-filter-severity-btnEl",
             "eventsTable": "#events_grid .x-grid-table",
-            "lastSeenHeader": "#lastTime"
+            "lastSeenHeader": "#lastTime",
+            "eventRows": '#events_grid-body table:nth-of-type(1) .x-grid-row',
             }
 
 @timed
@@ -127,37 +128,31 @@ def ackAll(user):
     result.putStat('elapsedTime', elapsedTime)
     return result
 
+@timed
 @assertPage(TITLE)
 def getEvents(user):
     result = ActionResult('getEvents')
-    start = time.time()
 
-    try:
-        timeout = 10
-        element = WebDriverWait(user.driver, timeout).until(
-            EC.presence_of_all_elements_located((By.CSS_SELECTOR, locator['events'])))
-    except TimeoutException:
-        print "Event list was not loaded in {} secs.".format(timeout)
-        result.success = False
-        return result
-
-    find(user.driver, "#events_grid")
-
-    event_rows = findMany(user.driver, "#events_grid-body table .x-grid-row")
+    eventRows = findMany(user.driver, elements["eventRows"])
     events = []
-    for el in event_rows:
-        events.append({
-            "resource": findIn(el, ".x-grid-cell-device").text,
-            "class": findIn(el, ".x-grid-cell-eventClass").text,
-            "summary": findIn(el, ".x-grid-cell-summary").text,
-            "first_seen": findIn(el, ".x-grid-cell-firstTime").text,
-            "last_seen": findIn(el, ".x-grid-cell-lastTime").text,
-            "count": findIn(el, ".x-grid-cell-count").text,
-        })
-
-    elapsedTime = time.time() - start
+    for el in eventRows:
+        cells = findManyIn(el, ".x-grid-cell")
+        event = {}
+        for cell in cells:
+            colNameClass = [x for x in cell.get_attribute("class").split(" ") if x.startswith("x-grid-cell-")][0]
+            colName = colNameClass.replace("x-grid-cell-", "")
+            val = cell.text
+            # some columns require more work to get useful data
+            if colName == "eventState":
+                eventStatusClass = findIn(cell, ".x-grid-cell-inner div:nth-of-type(1)").get_attribute("class")
+                val = eventStatusClass.split("-")[-1]
+            elif colName == "severity":
+                severityStatusClass = findIn(cell, ".severity-icon-small").get_attribute("class")
+                val = eventStatusClass.split(" ")[-1]
+                pass
+            event[colName] = val
+        events.append(event)
 
     result.putData('events', events)
-    result.putStat('elapsedTime', elapsedTime)
 
     return result
