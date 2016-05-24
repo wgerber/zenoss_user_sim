@@ -2,7 +2,8 @@ from common import *
 
 TITLE = 'Zenoss: ' # TODO: Fina a unique attribute of this page
 locator = {'ipFilter': '#device_grid-filter-ipAddress-inputEl',
-           'deviceRows': "#device_grid-body table .x-grid-row"}
+           'deviceRows': "#device_grid-body table .x-grid-row",
+           'navBtns': '#deviceDetailNav-body table .x-grid-row'}
 
 @timed
 @assertPage(TITLE)
@@ -11,12 +12,19 @@ def getEvents(user, sortedBy, ascending):
 
     time.sleep(3) # pop-up
 
-    navButtons = findMany(user.driver, '#deviceDetailNav-body table .x-grid-row')
-    navButtons[1].click() # Click the Events button
+    navBtns = getNavBtns(user)
+    if not navBtns:
+        result.success = False
+        return result
+    navBtns[1].click() # Click the Events button
 
     find(user.driver, "#device_events")
 
-    event_rows = findMany(user.driver, "#device_events-body table .x-grid-row")
+    try:
+        event_rows = findMany(user.driver, "#device_events-body table .x-grid-row")
+    except TimeoutException:
+        event_rows = []
+
     events = []
     for el in event_rows:
         events.append({
@@ -36,15 +44,16 @@ def getEvents(user, sortedBy, ascending):
 def lookAtGraphs(user):
     result = ActionResult('lookAtGraphs')
 
-    navBtns = findMany(user.driver, '#deviceDetailNav-body table .x-grid-row')
+    navBtns = getNavBtns(user)
+    if not navBtns:
+        result.success = False
+        return result
 
     for btn in navBtns:
         if btn.text == 'Graphs':
             btn.click() # Click the Graphs button
 
     # TODO: Wait until the graphs are loaded.
-
-    user.think(3)
 
     return result
 
@@ -53,7 +62,11 @@ def lookAtComponentGraphs(user):
     result = ActionResult('lookAtComponentGraphs')
 
     # Parse component type texts
-    navBtns = findMany(user.driver, '#deviceDetailNav-body table .x-grid-row')
+    navBtns = getNavBtns(user)
+    if not navBtns:
+        result.success = False
+        return result
+
     btnTexts = []
     comp = False
     for btn in navBtns:
@@ -66,7 +79,10 @@ def lookAtComponentGraphs(user):
 
     # Iterate through component types and click each item in each type
     for text in btnTexts:
-        navBtns = findMany(user.driver, '#deviceDetailNav-body table .x-grid-row')
+        navBtns = getNavBtns(user)
+        if not navBtns:
+            result.success = False
+            return result
         for btn in navBtns:
             if btn.text == text:
                 btn.click()
@@ -79,6 +95,8 @@ def lookAtComponentGraphs(user):
                         cols[3].click()
                     else:
                         row.click()
+
+                    # TODO: Wait until all graphs appear.
 
                     user.think(3) # TODO: How long would a user think before proceeding?
                 break
@@ -95,3 +113,10 @@ def zoomIn(user, times):
     # TODO: Click the refresh btn.
 
     return result
+
+def getNavBtns(user):
+    try:
+        navBtns = findMany(user.driver, locator['navBtns'])
+        return navBtns
+    except TimeoutException:
+        return None

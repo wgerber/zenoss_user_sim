@@ -5,6 +5,7 @@ from common import *
 
 TITLE = 'Zenoss: Devices'
 locator = {'ipFilter': '#device_grid-filter-ipAddress-inputEl',
+           'refreshBtn': '#refreshdevice-button',
            'deviceRows': "#device_grid-body table .x-grid-row",
            'device': '.z-entity'}
 
@@ -14,14 +15,22 @@ def filterByIp(user, ip):
     try:
         find(user.driver, locator['ipFilter']).clear()
         find(user.driver, locator['ipFilter']).send_keys(ip)
-        find(user.driver, locator['ipFilter']).send_keys(Keys.RETURN)
-    except Exception:
+        find(user.driver, locator['refreshBtn']).click()
+    except TimeoutException:
         result.success = False
-        return resut
+        return result
 
+    deviceRows = find(user.driver, locator["deviceRows"])
+    try:
+        wait(user.driver, EC.staleness_of(deviceRows), DEFAULT_TIMEOUT)
+    except TimeoutException:
+        user.log('Failed to update the list of devices after filtering')
+        result.success = False
+        return result
+
+    devices = []
     try:
         deviceRows = findMany(user.driver, locator['deviceRows'])
-        devices = []
         for el in deviceRows:
             trial = 1
             maxTrial = 3
@@ -40,10 +49,12 @@ def filterByIp(user, ip):
                     trial += 1
                     devices = []
             if trial > maxTrial:
+                user.log('Filtering by Ip {} reached max trial'.format(ip))
                 result.success = False
                 return result
-    except Exception:
-        result.success = False
+    except TimeoutException:
+        # TODO: What if it timed out because the page loading is too slow?
+        devices = []
     finally:
         result.putData('devices', devices)
 
@@ -57,6 +68,5 @@ def goToDeviceDetailPage(user, ip):
     if actionResult.data['filterByIp.devices']:
         find(user.driver, locator['device']).click()
         time.sleep(3) # TODO: Wait properly.
-        assert ip in user.driver.title
-
+        # TODO: Assert device detail page properly.
     return result
