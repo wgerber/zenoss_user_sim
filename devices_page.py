@@ -6,10 +6,12 @@ from common import *
 TITLE = 'Zenoss: Devices'
 locator = {'ipFilter': '#device_grid-filter-ipAddress-inputEl',
            'refreshBtn': '#refreshdevice-button',
+           'deviceTable': '#device_grid-body .x-grid-table',
            'deviceRows': "#device_grid-body table .x-grid-row",
            'device': '.z-entity'}
 
 @timed
+@assertPage('title', TITLE)
 def filterByIp(user, ip):
     result = ActionResult('filterByIp')
     try:
@@ -21,9 +23,9 @@ def filterByIp(user, ip):
         result.success = False
         return result
 
-    deviceRows = find(user.driver, locator["deviceRows"])
+    deviceTable = find(user.driver, locator["deviceTable"])
     try:
-        wait(user.driver, EC.staleness_of(deviceRows), 20)
+        wait(user.driver, EC.staleness_of(deviceTable), 20)
     except TimeoutException:
         user.log('Failed to update the list of devices after filtering')
         result.success = False
@@ -54,14 +56,16 @@ def filterByIp(user, ip):
                 result.success = False
                 return result
     except TimeoutException:
-        # TODO: What if it timed out because the page loading is too slow?
-        devices = []
+        if "wait" in find(user.driver, "body").get_attribute("style"):
+            result.fail("timed out waiting for event rows")
+            return result
     finally:
         result.putData('devices', devices)
 
     return result
 
 @timed
+@assertPageAfter('url', 'devicedetail#deviceDetailNav:device_overview')
 def goToDeviceDetailPage(user, ip):
     result = ActionResult('goToDeviceDetailPage')
 
@@ -69,5 +73,4 @@ def goToDeviceDetailPage(user, ip):
     if actionResult.data['filterByIp.devices']:
         find(user.driver, locator['device']).click()
         time.sleep(3) # TODO: Wait properly.
-        # TODO: Assert device detail page properly.
     return result

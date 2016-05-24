@@ -2,7 +2,7 @@ from workflows import Workflow, takeAction
 from common import *
 import login_page as LoginPage
 import event_console_page as EventConsolePage
-import navigation as NavigationPage
+import navigation_page as NavigationPage
 
 class WhatHappenedLastNight(Workflow):
     @timed

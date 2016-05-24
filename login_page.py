@@ -8,7 +8,7 @@ locator = {"loginField": "#username",
             "submitBtn": "#loginButton"}
 
 @timed
-@assertPageAfter('Zenoss: Dashboard')
+@assertPageAfter('title', 'Zenoss: Dashboard')
 @screenshot
 def login(user, url, username, password):
     result = ActionResult('login')

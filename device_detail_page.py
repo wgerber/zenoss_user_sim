@@ -1,12 +1,11 @@
 from common import *
 
-TITLE = 'Zenoss: ' # TODO: Fina a unique attribute of this page
 locator = {'ipFilter': '#device_grid-filter-ipAddress-inputEl',
            'deviceRows': "#device_grid-body table .x-grid-row",
            'navBtns': '#deviceDetailNav-body table .x-grid-row'}
 
 @timed
-@assertPage(TITLE)
+@assertPage('url', 'devicedetail#deviceDetailNav')
 def getEvents(user, sortedBy, ascending):
     result = ActionResult('getEvents')
 
@@ -41,6 +40,7 @@ def getEvents(user, sortedBy, ascending):
     return result
 
 @timed
+@assertPage('url', 'devicedetail#deviceDetailNav')
 def lookAtGraphs(user):
     result = ActionResult('lookAtGraphs')
 
@@ -63,6 +63,7 @@ def lookAtGraphs(user):
     return result
 
 @timed
+@assertPage('url', 'devicedetail#deviceDetailNav')
 def lookAtComponentGraphs(user):
     result = ActionResult('lookAtComponentGraphs')
 
@@ -123,6 +124,7 @@ def zoomIn(user, times):
 
     return result
 
+@assertPage('url', 'devicedetail#deviceDetailNav')
 def getNavBtns(user):
     try:
         navBtns = findMany(user.driver, locator['navBtns'])

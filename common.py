@@ -11,30 +11,40 @@ from selenium.common.exceptions import TimeoutException
 DEFAULT_TIMEOUT = 10
 
 class assertPage(object):
-    def __init__(self, title):
-        self.title = title
+    def __init__(self, attr, expected):
+        self.attr = attr
+        self.expected = expected
 
     def __call__(self, f):
         @wraps(f)
         def wrapper(*args, **kwargs):
-            assert self.title in args[0].driver.title, \
+            if self.attr == 'title':
+                actual = args[0].driver.title
+            elif self.attr == 'url':
+                actual = args[0].driver.current_url
+            assert self.expected in actual, \
                 '{}() is called on the wrong page, {}.'.format(
-                    f.__name__, self.title)
+                    f.__name__, self.expected)
             return f(*args, **kwargs)
 
         return wrapper
 
 class assertPageAfter(object):
-    def __init__(self, title):
-        self.title = title
+    def __init__(self, attr, expected):
+        self.attr = attr
+        self.expected = expected
 
     def __call__(self, f):
         @wraps(f)
         def wrapper(*args, **kwargs):
             result = f(*args, **kwargs)
-            assert self.title in args[0].driver.title, \
+            if self.attr == 'title':
+                actual = args[0].driver.title
+            elif self.attr == 'url':
+                actual = args[0].driver.current_url
+            assert self.expected in actual, \
                 'Called {}() and expected page "{}", but found page "{}".'.format(
-                    f.__name__, self.title, args[0].driver.title)
+                    f.__name__, self.expected, actual)
             return result
         return wrapper
 

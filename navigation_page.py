@@ -6,7 +6,7 @@ locator = {'events': '#Events-nav-button',
            "logoutLink": "#sign-out-link"}
 
 @timed
-@assertPageAfter('Zenoss: Events')
+@assertPageAfter('title', 'Zenoss: Events')
 def goToEventConsole(user):
     # TODO - handle popup without sleeps
     time.sleep(2) # Wait until the pop-up disappears.
@@ -15,7 +15,7 @@ def goToEventConsole(user):
     return result
 
 @timed
-@assertPageAfter('Zenoss: Devices')
+@assertPageAfter('title', 'Zenoss: Devices')
 def goToDevicesPage(user):
     # TODO - handle popup without sleeps
     time.sleep(2) # wait pop-up
@@ -25,7 +25,7 @@ def goToDevicesPage(user):
 
 @timed
 @screenshot
-@assertPageAfter('Login')
+@assertPageAfter('title', 'Login')
 def logout(user):
     result = ActionResult("logout")
 

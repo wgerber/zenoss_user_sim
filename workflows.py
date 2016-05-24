@@ -3,7 +3,7 @@ from common import *
 import login_page as LoginPage
 import devices_page as DevicesPage
 import event_console_page as EventConsolePage
-import navigation as Navigation
+import navigation_page as Navigation
 import device_detail_page as DeviceDetailPage
 
 class Workflow(object):

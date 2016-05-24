@@ -29,7 +29,7 @@ elements = {"severityBtn": "#events_grid-filter-severity-btnEl",
             }
 
 @timed
-@assertPage(TITLE)
+@assertPage('title', TITLE)
 def filterBySeverity(user, severity):
     result = ActionResult(whoami())
     severities = ["critical", "error", "warning", "info", "debug", "clear"]
@@ -70,7 +70,7 @@ def filterBySeverity(user, severity):
     return result
 
 @timed
-@assertPage(TITLE)
+@assertPage('title', TITLE)
 def sortByLastSeen(user, newSortDir):
     result = ActionResult(whoami())
     newSortDir = "ASC" if newSortDir == "ascending" else "DESC"
@@ -93,7 +93,7 @@ def sortByLastSeen(user, newSortDir):
 
     return result
 
-@assertPage(TITLE)
+@assertPage('title', TITLE)
 def selectAllEvents(user):
     result = ActionResult('ackAll')
     start = time.time()
@@ -115,7 +115,7 @@ def selectAllEvents(user):
 
     return result
 
-@assertPage(TITLE)
+@assertPage('title', TITLE)
 def ackAll(user):
     result = ActionResult('ackAll')
     start = time.time()
@@ -129,7 +129,7 @@ def ackAll(user):
     return result
 
 @timed
-@assertPage(TITLE)
+@assertPage('title', TITLE)
 def getEvents(user):
     result = ActionResult('getEvents')
 

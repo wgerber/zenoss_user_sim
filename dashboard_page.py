@@ -13,7 +13,7 @@ from common import assertPage
 TITLE = 'Zenoss: Dashboard'
 locator = {'header': '#header'}
 
-@assertPage(TITLE)
+@assertPage('title', TITLE)
 def checkPageLoaded(driver):
     try:
         element = 'header'
