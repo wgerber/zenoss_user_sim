@@ -52,9 +52,11 @@ def startUser(name, url, username, password, headless, logDir, chromedriver):
 
     # TODO - configure workflow
     user.addWorkflow([
-        LoginAndLogout(),
+        Login(),
         CheckDevice("10.87.128.58"),
-        AckEvents()])
+        AckEvents(),
+        WhatHappenedLastNight(),
+        Logout()])
     try:
         user.work()
     except:
