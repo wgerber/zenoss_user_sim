@@ -96,7 +96,11 @@ def lookAtComponentGraphs(user):
                     else:
                         row.click()
 
-                    # TODO: Wait until all graphs appear.
+                    try:
+                        graphs = find(user.driver, '#graph_panel-body', 20)
+                        findManyIn(graphs, 'graph-panel')
+                    except TimeoutException:
+                        result.success = False
 
                     user.think(3) # TODO: How long would a user think before proceeding?
                 break

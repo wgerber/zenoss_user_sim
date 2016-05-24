@@ -74,9 +74,9 @@ def screenshot(f):
         return result
     return wrapper
 
-def find(d, selector):
+def find(d, selector, timeout = DEFAULT_TIMEOUT):
     # NOTE - returns invisible elements as well
-    return wait(d, EC.presence_of_element_located((By.CSS_SELECTOR, selector)), DEFAULT_TIMEOUT)
+    return wait(d, EC.presence_of_element_located((By.CSS_SELECTOR, selector)), timeout)
 
 def findMany(d, selector):
     # NOTE - returns invisible elements as well
