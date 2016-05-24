@@ -22,7 +22,7 @@ def filterByIp(user, ip):
 
     deviceRows = find(user.driver, locator["deviceRows"])
     try:
-        wait(user.driver, EC.staleness_of(deviceRows), DEFAULT_TIMEOUT)
+        wait(user.driver, EC.staleness_of(deviceRows), 20)
     except TimeoutException:
         user.log('Failed to update the list of devices after filtering')
         result.success = False
