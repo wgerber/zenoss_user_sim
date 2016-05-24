@@ -28,6 +28,7 @@ class User(object):
         self.workflows = []
         self.results = []
         self.hasQuit = False
+        self.loggedIn = False
 
     def work(self):
         self.log("beginning work")
