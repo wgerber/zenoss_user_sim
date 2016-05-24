@@ -53,7 +53,12 @@ def lookAtGraphs(user):
         if btn.text == 'Graphs':
             btn.click() # Click the Graphs button
 
-    # TODO: Wait until the graphs are loaded.
+            try:
+                graphs = find(user.driver, '#device_graphs-body', 20)
+                findManyIn(graphs, '.graph-panel')
+            except TimeoutException:
+                user.log('Timed out while loading device graphs')
+                result.success = False
 
     return result
 

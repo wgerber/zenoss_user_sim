@@ -17,6 +17,7 @@ def filterByIp(user, ip):
         find(user.driver, locator['ipFilter']).send_keys(ip)
         find(user.driver, locator['refreshBtn']).click()
     except TimeoutException:
+        user.log('Failed to enter Ip address to the text area')
         result.success = False
         return result
 
@@ -33,7 +34,7 @@ def filterByIp(user, ip):
         deviceRows = findMany(user.driver, locator['deviceRows'])
         for el in deviceRows:
             trial = 1
-            maxTrial = 3
+            maxTrial = 10
             while trial <= maxTrial:
                 try:
                     devices.append({
