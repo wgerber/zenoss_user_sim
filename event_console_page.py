@@ -133,7 +133,18 @@ def ackAll(user):
 def getEvents(user):
     result = ActionResult('getEvents')
 
-    eventRows = findMany(user.driver, elements["eventRows"])
+    eventRows = []
+    try:
+        eventRows = findMany(user.driver, elements["eventRows"])
+    # we can timeout because there are no event rows,
+    # or we can timeout because the UI is slow to respond
+    except TimeoutException:
+        # if body has style "cursor: wait", then extjs is loading
+        # something, and this is an actual timeout
+        if "wait" in find(user.driver, "body").get_attribute("style"):
+            result.fail("timed out waiting for event rows")
+            return result
+
     events = []
     for el in eventRows:
         cells = findManyIn(el, ".x-grid-cell")
