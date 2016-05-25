@@ -1,6 +1,7 @@
 import time, traceback, argparse
 from threading import Thread
 from xvfbwrapper import Xvfb
+from multiprocessing import Process
 
 from workflows import *
 from what_happened_workflow import WhatHappenedLastNight
@@ -51,6 +52,8 @@ def startUser(name, url, username, password, headless, logDir, chromedriver):
             logDir=logDir, chromedriver=chromedriver)
 
     # TODO - configure workflow
+    # Always start with Login() and end with Logout(). There has to be at least
+    # one workflow between Login() and Logout().
     user.addWorkflow([
         Login(),
         CheckDevice("10.87.128.58"),
@@ -90,15 +93,17 @@ if __name__ == '__main__':
         "    logDir: %s") % (
             args.users, args.url, args.username, "True" if args.headless else "False", args.logDir)
 
-    threads = []
+    processes = []
     for i in xrange(args.users):
         # TODO - skill level
         # TODO - workflows
-        t = Thread(target=startUser, args=(
+        p = Process(target=startUser, args=(
             "bob%i"%i, args.url, args.username, args.password, args.headless, args.logDir, args.chromedriver))
-        threads.append(t)
-        t.start()
+        processes.append(p)
+        p.start()
         # give xvfb time to grab a display before kicking off
         # a new request
         time.sleep(0.2)
     # TODO - wait till all threads are done and log a message
+    for p in processes:
+        p.join()
