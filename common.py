@@ -105,6 +105,10 @@ def wait(d, fn, time=DEFAULT_TIMEOUT):
 def whoami():
     return inspect.stack()[1][3]
 
+class Workflow(object):
+    def __init__(self, **kwargs):
+        self.name = self.__class__.__name__
+
 class Result(object):
     def __init__(self, name):
         self.name = name
@@ -147,3 +151,10 @@ class WorkflowResult(Result):
         for k, v in result.stat.iteritems():
             k = '.'.join([self.name, k])
             self.stat[k] = v
+
+# performs an action and automatically applies its
+# results to the provided workflowResult
+def takeAction(result, action, *actionArgs):
+    actionResult = action(*actionArgs)
+    result.addActionResult(actionResult)
+    return actionResult
