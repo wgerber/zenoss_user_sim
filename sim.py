@@ -1,8 +1,10 @@
+import sys
 import time, traceback, argparse
 from xvfbwrapper import Xvfb
 from multiprocessing import Process
 
 from workflows import MonitorEvents, LogInOutWorkflow, MonitorDashboard
+
 from user import *
 
 def parse_args():
@@ -26,6 +28,8 @@ def parse_args():
     parser.set_defaults(headless=True)
     parser.add_argument('--hour', dest = 'workHour', default = 0,
             help = 'duration in hours that workflows will be repeated', type = float)
+    parser.add_argument('--workflows', dest = 'workflows', default = '',
+            help = 'workflows to run')
 
     # TODO - skill level
     # TODO - workflow
@@ -41,11 +45,13 @@ def parse_args():
         raise Exception("username is required")
     if not args.password:
         raise Exception("password is required")
+    if not args.workflows:
+        raise Exception('workflows are required')
     else:
         return args
 
 def startUser(name, url, username, password, headless, logDir, chromedriver,
-        workHour):
+        workHour, workflowNames):
     if headless:
         xvfb = Xvfb(width=1100, height=800)
         xvfb.start()
@@ -56,17 +62,23 @@ def startUser(name, url, username, password, headless, logDir, chromedriver,
     # TODO - configure workflow
     # Always start with Login() and end with Logout(). There has to be at least
     # one workflow between Login() and Logout().
-    user.addWorkflow([
-        LogInOutWorkflow.Login(),
-        MonitorDashboard(),
-        MonitorEvents(),
-        MonitorDashboard(),
-        MonitorEvents(),
-        MonitorDashboard(),
-        MonitorEvents(),
-        MonitorDashboard(),
-        MonitorEvents(),
-        LogInOutWorkflow.Logout()])
+    workflows = []
+    workflows.append(LogInOutWorkflow.Login())
+
+    workflowNames = [name.strip() for name in workflowNames.split(',')]
+    for name in workflowNames:
+        try:
+            workflowClass = getattr(sys.modules[__name__], name)
+        except AttributeError:
+            user.log('Could not find workflow {}'.format(name))
+            user.quit()
+
+        workflows.append(workflowClass())
+
+    workflows.append(LogInOutWorkflow.Logout())
+
+    user.addWorkflow(workflows)
+
     try:
         user.work()
     except:
@@ -105,7 +117,7 @@ if __name__ == '__main__':
         # TODO - skill level
         # TODO - workflows
         p = Process(target=startUser, args=(
-            "bob%i"%i, args.url, args.username, args.password, args.headless, args.logDir, args.chromedriver, args.workHour))
+            "bob%i"%i, args.url, args.username, args.password, args.headless, args.logDir, args.chromedriver, args.workHour, args.workflows))
         processes.append(p)
         p.start()
         # give xvfb time to grab a display before kicking off
