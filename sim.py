@@ -2,9 +2,8 @@ import time, traceback, argparse
 from xvfbwrapper import Xvfb
 from multiprocessing import Process
 
-from workflows import *
-from what_happened_workflow import WhatHappenedLastNight
-from users import *
+from workflows import MonitorEvents, LogInOutWorkflow, MonitorDashboard
+from user import *
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Spin up some simulated users")
@@ -25,8 +24,8 @@ def parse_args():
     parser.add_argument("--no-headless",
             dest="headless", action="store_false", help="if simulations should run headless")
     parser.set_defaults(headless=True)
-    parser.add_argument('--hour', dest = 'workHour', default = 1,
-            help = 'duration that workflows will be repeated', type = float)
+    parser.add_argument('--hour', dest = 'workHour', default = 0,
+            help = 'duration in hours that workflows will be repeated', type = float)
 
     # TODO - skill level
     # TODO - workflow
@@ -58,13 +57,16 @@ def startUser(name, url, username, password, headless, logDir, chromedriver,
     # Always start with Login() and end with Logout(). There has to be at least
     # one workflow between Login() and Logout().
     user.addWorkflow([
-        Login(),
-#        CheckDevice("10.87.128.58"),
-#        AckEvents(),
-#        WhatHappenedLastNight(),
-        Logout(),
-        Login(),
-        Logout()])
+        LogInOutWorkflow.Login(),
+        MonitorDashboard(),
+        MonitorEvents(),
+        MonitorDashboard(),
+        MonitorEvents(),
+        MonitorDashboard(),
+        MonitorEvents(),
+        MonitorDashboard(),
+        MonitorEvents(),
+        LogInOutWorkflow.Logout()])
     try:
         user.work()
     except:

@@ -3,7 +3,7 @@ import time, os
 from collections import defaultdict
 from selenium import webdriver
 
-from workflows import Workflow
+from common import Workflow
 
 # skill levels determine how long it takes
 # for users to perform tasks
@@ -89,8 +89,11 @@ class User(object):
 
     def log(self, message):
         logStr = "[%s] %s - %s\n" % (time.asctime(), self.name, message)
-        self.logFile.write(logStr)
-        self.logFile.flush()
+        if self.hasQuit:
+            print "cannot log to file, user has already quit"
+        else:
+            self.logFile.write(logStr)
+            self.logFile.flush()
         print logStr[:-1]
 
     def screenshot(self, name):

@@ -1,10 +1,8 @@
-from workflows import Workflow, takeAction
+import time
 from common import *
-import login_page as LoginPage
-import event_console_page as EventConsolePage
-import navigation_page as NavigationPage
+from pages import LoginPage, EventConsolePage, NavigationPage
 
-class WhatHappenedLastNight(Workflow):
+class MonitorEvents(Workflow):
     @timed
     @screenshot
     def run(self, user):
@@ -15,6 +13,16 @@ class WhatHappenedLastNight(Workflow):
             result.fail("user is not logged in")
             return result
 
+        workStart = time.time()
+        if not do(NavigationPage.goToEventConsole, (user,)):
+            return result
+        if not do(EventConsolePage.filterBySeverity, (user, "critical")):
+            return result
+        if not do(EventConsolePage.sortByLastSeen, (user, "ascending")):
+            return result
+        result.putStat('workTime', time.time() - workStart)
+
+        """
         # go to event console
         if not do(NavigationPage.goToEventConsole, (user,)):
             return result
@@ -26,7 +34,9 @@ class WhatHappenedLastNight(Workflow):
         # sort events by last seen
         if not do(EventConsolePage.sortByLastSeen, (user, "ascending")):
             return result
+            """
 
+        """
         # look at events
         eventResult = takeAction(result, EventConsolePage.getEvents, user)
         result.addActionResult(eventResult)
@@ -41,6 +51,12 @@ class WhatHappenedLastNight(Workflow):
                 user.log("my name's in that event summary! i should do something!")
                 user.think(3)
             user.think(1)
+        """
+
+        # stare at the screen REAL hard
+        user.think(8)
+
+        # TODO - refresh/filter/sort
 
         return result
 
