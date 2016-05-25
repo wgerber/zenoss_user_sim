@@ -2,7 +2,7 @@ import time, traceback, argparse
 from xvfbwrapper import Xvfb
 from multiprocessing import Process
 
-from workflows import MonitorEvents, LogInOutWorkflow, MonitorDashboard
+from workflows import MonitorEvents, LogInOutWorkflow, MonitorDashboard, InvestigateDevice
 from user import *
 
 def parse_args():
@@ -56,16 +56,16 @@ def startUser(name, url, username, password, headless, logDir, chromedriver,
     # TODO - configure workflow
     # Always start with Login() and end with Logout(). There has to be at least
     # one workflow between Login() and Logout().
+    """
     user.addWorkflow([
         LogInOutWorkflow.Login(),
         MonitorDashboard(),
         MonitorEvents(),
-        MonitorDashboard(),
-        MonitorEvents(),
-        MonitorDashboard(),
-        MonitorEvents(),
-        MonitorDashboard(),
-        MonitorEvents(),
+        LogInOutWorkflow.Logout()])
+    """
+    user.addWorkflow([
+        LogInOutWorkflow.Login(),
+        InvestigateDevice(),
         LogInOutWorkflow.Logout()])
     try:
         user.work()
@@ -74,11 +74,13 @@ def startUser(name, url, username, password, headless, logDir, chromedriver,
         traceback.print_exc()
     finally:
         #log results
+        """
         resultsStr = ""
         for result in user.results:
             resultsStr += str(result)
             resultsStr += ","
         user.log(resultsStr)
+        """
         print "cleaning up %s" % user.name
         user.quit()
         if headless:

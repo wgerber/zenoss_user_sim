@@ -2,7 +2,153 @@ from common import *
 
 locator = {'ipFilter': '#device_grid-filter-ipAddress-inputEl',
            'deviceRows': "#device_grid-body table .x-grid-row",
-           'navBtns': '#deviceDetailNav-body table .x-grid-row'}
+           'navBtns': '#deviceDetailNav-body table .x-grid-row',
+           "deviceDetailNav": "#deviceDetailNav",
+           "deviceDetailNavRows": "#deviceDetailNav .x-grid-row",
+           "europaGraph": ".europagraph",
+           "deviceGraphs": "#device_graphs",
+           "deviceGraphControls": "#device_graphs .x-btn",
+           "componentCard": "#component_card"}
+
+@timed
+def checkPageReady(user):
+    result = ActionResult(whoami())
+    try:
+        find(user.driver, locator["deviceDetailNav"])
+    except:
+        result.fail("could not find deviceDetailNav element")
+    return result
+
+@timed
+def viewDeviceGraphs(user):
+    result = ActionResult(whoami())
+    rows = []
+    try:
+        rows = findMany(user.driver, locator["deviceDetailNavRows"])
+    except:
+        result.fail("could not find device detail nav rows")
+        return result
+
+    foundGraphs = False
+    for row in rows:
+        if row.text == "Graphs":
+            # TODO - handle stale element
+            row.click()
+            foundGraphs = True
+            return result
+
+    if not foundGraphs:
+        result.fail("could not find graphs nav link")
+        return result
+
+    #wait till at least 1 graph loads
+    try:
+        find(user.driver, locator["europaGraph"])
+    except:
+        result.fail("could not find a single teeny tiny itty bitty graph. Not even one")
+        return result
+
+    return result
+
+@timed
+def interactWithDeviceGraphs(user):
+    result = ActionResult(whoami())
+    buttonEls = []
+
+    totalWorkTime = 0
+
+    start = time.time()
+    # pan back a few times
+    for _ in xrange(4):
+        # find graph controls
+        try:
+            buttonEls = findMany(user.driver, locator["deviceGraphControls"])
+        except:
+            result.fail("could not find device graph controls")
+            return result
+        # find the back button
+        backButtonEl = [el for el in buttonEls if el.text == "<"][0]
+        if not backButtonEl:
+            result.fail("could not find device graph back button")
+            return result
+        # pan back
+        backButtonEl.click()
+        # TODO - wait till graph updates
+
+    totalWorkTime += time.time() - start
+
+    # contemplate life, the universe, and everything
+    user.think(4)
+
+    start = time.time()
+    # zoom out a few times
+    for _ in xrange(2):
+        # find graph controls
+        try:
+            buttonEls = findMany(user.driver, locator["deviceGraphControls"])
+        except:
+            result.fail("could not find device graph controls")
+            return result
+        # find the zoom out button
+        zoomOutEl = [el for el in buttonEls if el.text == "Zoom Out"][0]
+        if not zoomOutEl:
+            result.fail("could not find device graph zoom out button")
+            return result
+        # zoom out
+        zoomOutEl.click()
+        # TODO - wait till graph updates
+
+    totalWorkTime += time.time() - start
+
+    # just take a minute. just stop and take a minute and think
+    user.think(4)
+
+    result.putStat("workTime", totalWorkTime)
+    return result
+
+@timed
+def viewComponentDetails(user, componentName):
+    result = ActionResult(whoami())
+    componentRows = _getComponentRows(user)
+
+    foundComp = False
+    for rowEl in componentRows:
+        if rowEl.text == componentName:
+            rowEl.click()
+            foundComp = True
+
+    if not foundComp:
+        result.fail("could not find component named %s" % componentName)
+        return result
+
+    # TODO - wait till component has loaded
+    # TODO - view graphs
+    # TODO - view events
+
+    return result
+
+def getComponentNames(user):
+    return map(lambda x: x.text,_getComponentRows(user))
+
+def _getComponentRows(user):
+    componentRows = []
+    try:
+        rows = findMany(user.driver, locator["deviceDetailNavRows"])
+    except:
+        result.fail("could not find device detail nav rows")
+        return result
+
+    # NOTE - assumes graphs comes immediately after components
+    foundComps = False
+    for row in rows:
+        if row.text == "Graphs":
+            break
+        if row.text == "Components":
+            foundComps = True
+            continue
+        if foundComps:
+            componentRows.append(row)
+    return componentRows
 
 @timed
 @assertPage('url', 'devicedetail#deviceDetailNav')
@@ -131,3 +277,5 @@ def getNavBtns(user):
         return navBtns
     except TimeoutException:
         return None
+
+
