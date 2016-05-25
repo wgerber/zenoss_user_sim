@@ -1,5 +1,4 @@
 import time, traceback, argparse
-from threading import Thread
 from xvfbwrapper import Xvfb
 from multiprocessing import Process
 
@@ -104,6 +103,6 @@ if __name__ == '__main__':
         # give xvfb time to grab a display before kicking off
         # a new request
         time.sleep(0.2)
-    # TODO - wait till all threads are done and log a message
+    # TODO - wait till all processes are done and log a message
     for p in processes:
         p.join()
