@@ -74,13 +74,11 @@ def startUser(name, url, username, password, headless, logDir, chromedriver,
         traceback.print_exc()
     finally:
         #log results
-        """
         resultsStr = ""
         for result in user.results:
             resultsStr += str(result)
             resultsStr += ","
-        user.log(resultsStr)
-        """
+        user.log(resultsStr, toConsole=False)
         print "cleaning up %s" % user.name
         user.quit()
         if headless:

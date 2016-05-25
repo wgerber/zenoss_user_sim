@@ -25,27 +25,14 @@ class InvestigateDevice(Workflow):
 
         componentNames = DeviceDetailsPage.getComponentNames(user)
 
-        import pprint; pprint.pprint(componentNames)
+        for name in componentNames:
+            if not do(DeviceDetailsPage.viewComponentDetails, (user, name)):
+                return result
 
-        if not do(DeviceDetailsPage.viewComponentDetails, (user, componentNames[0])):
-            return result
-
-        time.sleep(4)
-
-        # TODO - view a few different components
         # TODO - perform device command
 
-        """
-        workStart = time.time()
-        if not do(NavigationPage.goToDashboard, (user,)):
-            return result
-        result.putStat('workTime', time.time() - workStart)
-
-"""
         # stare at the screen REAL hard
         user.think(8)
-
-        # TODO - refresh
 
         return result
 
