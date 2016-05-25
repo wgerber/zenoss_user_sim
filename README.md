@@ -18,7 +18,7 @@ Once the build is complete, the image can be launched and command line arguments
         -p ****** \
         -c 10 \
         --log-dir ./log \
-        --workflows 'MonitorDashboard, MonitorEvent'
+        --workflows 'MonitorDashboard, InvestigateDevice, MonitorEvent, InvestigateDevice'
 
 Note that this image must be run as `privileged` and `/dev/shm` must be bindmounted for chrome to work properly. Mounting `/etc/hosts` into the image is useful because the Zenoss instance may only be reachable by hostname
 
@@ -30,7 +30,7 @@ To run directly in python, install dependencies (`Xvfb` and `chromedriver` for t
         -p ****** \
         -c 10 \
         --log-dir /tmp/ \
-        --workflows 'MonitorDashboard, MonitorEvent'
+        --workflows 'MonitorDashboard, InvestigateDevice, MonitorEvent, InvestigateDevice'
 
 For configuration options, try `python sim.py --help` or `docker run zenoss/usersim:v1`.
 
