@@ -60,10 +60,11 @@ class User(object):
                         "workflow %s successful (%is)"
                         % (workflow.name, elapsedTime))
 
-                hourSoFar = (time.time() - start)/HOUR_TO_SEC
-                if hourSoFar > self.workHour:
-                    atWork = False
-                    break
+            # don't quit until all workflows are complete
+            hourSoFar = (time.time() - start)/HOUR_TO_SEC
+            if hourSoFar > self.workHour:
+                atWork = False
+                break
         logout.run(self)
         assert not self.loggedIn, 'Logout failed'
         totalTime = reduce(lambda acc,w: w.stat[w.name + ".elapsedTime"] + acc, self.results, 0)
