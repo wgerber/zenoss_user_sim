@@ -4,7 +4,6 @@ from xvfbwrapper import Xvfb
 from multiprocessing import Process
 
 from workflows import MonitorEvents, LogInOutWorkflow, MonitorDashboard
-
 from user import *
 
 def parse_args():
@@ -29,7 +28,7 @@ def parse_args():
     parser.add_argument('--hour', dest = 'workHour', default = 0,
             help = 'duration in hours that workflows will be repeated', type = float)
     parser.add_argument('--workflows', dest = 'workflows', default = '',
-            help = 'workflows to run')
+            help = 'workflows to run, a comma separated string')
 
     # TODO - skill level
     # TODO - workflow
