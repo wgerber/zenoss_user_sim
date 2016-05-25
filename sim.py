@@ -24,8 +24,8 @@ def parse_args():
     parser.add_argument("--no-headless",
             dest="headless", action="store_false", help="if simulations should run headless")
     parser.set_defaults(headless=True)
-    parser.add_argument('--hour', dest = 'workHour', default = 1,
-            help = 'duration that workflows will be repeated', type = float)
+    parser.add_argument('--hour', dest = 'workHour', default = 0,
+            help = 'duration in hours that workflows will be repeated', type = float)
 
     # TODO - skill level
     # TODO - workflow
