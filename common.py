@@ -6,7 +6,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import TimeoutException, StaleElementReferenceException
 
 DEFAULT_TIMEOUT = 10
 
@@ -158,3 +158,21 @@ def takeAction(result, action, *actionArgs):
     actionResult = action(*actionArgs)
     result.addActionResult(actionResult)
     return actionResult
+
+def doer(result, user):
+    def fn(actionFn, args):
+        # perform action
+        actionResult = takeAction(result, actionFn, *args)
+        # log success/fail message
+        message = ""
+        if result.success:
+            message += "successfully performed"
+        else:
+            message += "failed to perform"
+        message += " %s" % actionFn.__name__
+        elapsed = actionResult.stat["%s.elapsedTime" % actionFn.__name__]
+        if elapsed is not None:
+            message += " (%is)" % elapsed
+        user.log(message)
+        return result.success
+    return fn

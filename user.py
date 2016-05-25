@@ -13,7 +13,7 @@ ADVANCED = 0.5
 GODLIKE = 0
 
 class User(object):
-    def __init__(self, name, url, username, password, skill=GODLIKE, logDir="", chromedriver=None, workHour=0):
+    def __init__(self, name, url, username, password, skill=ADVANCED, logDir="", chromedriver=None, workHour=0):
         self.name = name
         self.url = url
         self.username = username
@@ -53,17 +53,18 @@ class User(object):
                     self.log(
                         'workflow {} failed, user {} quitting'
                         .format(workflow.name, self.name))
-                    self.quit()
+                    # TODO - more graceful quit?
+                    raise Exception("user quit")
                 else:
                     self.log(
                         "workflow %s successful (%is)"
                         % (workflow.name, elapsedTime))
 
-                hourSoFar = (time.time() - start)/HOUR_TO_SEC
-                if hourSoFar > self.workHour:
-                    atWork = False
-                    break
-
+            # don't quit until all workflows are complete
+            hourSoFar = (time.time() - start)/HOUR_TO_SEC
+            if hourSoFar > self.workHour:
+                atWork = False
+                break
         logout.run(self)
         assert not self.loggedIn, 'Logout failed'
         totalTime = reduce(lambda acc,w: w.stat[w.name + ".elapsedTime"] + acc, self.results, 0)
@@ -87,14 +88,15 @@ class User(object):
     def think(self, duration):
         time.sleep(duration * self.skill)
 
-    def log(self, message):
+    def log(self, message, toConsole=True):
         logStr = "[%s] %s - %s\n" % (time.asctime(), self.name, message)
         if self.hasQuit:
             print "cannot log to file, user has already quit"
         else:
             self.logFile.write(logStr)
             self.logFile.flush()
-        print logStr[:-1]
+        if toConsole:
+            print logStr[:-1]
 
     def screenshot(self, name):
         filename = self.logDir + "/%s-%s-screen.png" % (self.name, name)

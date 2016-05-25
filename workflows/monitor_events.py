@@ -59,21 +59,3 @@ class MonitorEvents(Workflow):
         # TODO - refresh/filter/sort
 
         return result
-
-def doer(result, user):
-    def fn(actionFn, args):
-        # perform action
-        actionResult = takeAction(result, actionFn, *args)
-        # log success/fail message
-        message = ""
-        if result.success:
-            message += "successfully performed"
-        else:
-            message += "failed to perform"
-        message += " %s" % actionFn.__name__
-        elapsed = actionResult.stat["%s.elapsedTime" % actionFn.__name__]
-        if elapsed is not None:
-            message += " (%is)" % elapsed
-        user.log(message)
-        return result.success
-    return fn

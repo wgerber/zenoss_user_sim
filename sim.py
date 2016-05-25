@@ -3,7 +3,7 @@ import time, traceback, argparse
 from xvfbwrapper import Xvfb
 from multiprocessing import Process
 
-from workflows import MonitorEvents, LogInOutWorkflow, MonitorDashboard
+from workflows import MonitorEvents, LogInOutWorkflow, MonitorDashboard, InvestigateDevice
 from user import *
 
 def parse_args():
@@ -89,7 +89,7 @@ def startUser(name, url, username, password, headless, logDir, chromedriver,
         for result in user.results:
             resultsStr += str(result)
             resultsStr += ","
-        user.log(resultsStr)
+        user.log(resultsStr, toConsole=False)
         print "cleaning up %s" % user.name
         user.quit()
         if headless:
@@ -108,8 +108,9 @@ if __name__ == '__main__':
         "    url: %s\n"
         "    username: %s\n"
         "    headless: %s\n"
+        "    workflows: %s\n"
         "    logDir: %s") % (
-            args.users, args.url, args.username, "True" if args.headless else "False", args.logDir)
+            args.users, args.url, args.username, "True" if args.headless else "False", args.workflows, args.logDir)
 
     processes = []
     for i in xrange(args.users):
