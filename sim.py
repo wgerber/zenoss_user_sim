@@ -25,6 +25,9 @@ def parse_args():
     parser.add_argument("--no-headless",
             dest="headless", action="store_false", help="if simulations should run headless")
     parser.set_defaults(headless=True)
+    parser.add_argument('--hour', dest = 'workHour', default = 1,
+            help = 'duration that workflows will be repeated', type = float)
+
     # TODO - skill level
     # TODO - workflow
     # TODO - more sensible defaults and argument config
@@ -42,22 +45,25 @@ def parse_args():
     else:
         return args
 
-def startUser(name, url, username, password, headless, logDir, chromedriver):
+def startUser(name, url, username, password, headless, logDir, chromedriver,
+        workHour):
     if headless:
         xvfb = Xvfb(width=1100, height=800)
         xvfb.start()
 
     user = User(name, url=url, username=username, password=password,
-            logDir=logDir, chromedriver=chromedriver)
+            logDir=logDir, chromedriver=chromedriver, workHour=workHour)
 
     # TODO - configure workflow
     # Always start with Login() and end with Logout(). There has to be at least
     # one workflow between Login() and Logout().
     user.addWorkflow([
         Login(),
-        CheckDevice("10.87.128.58"),
-        AckEvents(),
-        WhatHappenedLastNight(),
+#        CheckDevice("10.87.128.58"),
+#        AckEvents(),
+#        WhatHappenedLastNight(),
+        Logout(),
+        Login(),
         Logout()])
     try:
         user.work()
@@ -97,7 +103,7 @@ if __name__ == '__main__':
         # TODO - skill level
         # TODO - workflows
         p = Process(target=startUser, args=(
-            "bob%i"%i, args.url, args.username, args.password, args.headless, args.logDir, args.chromedriver))
+            "bob%i"%i, args.url, args.username, args.password, args.headless, args.logDir, args.chromedriver, args.workHour))
         processes.append(p)
         p.start()
         # give xvfb time to grab a display before kicking off

@@ -13,7 +13,7 @@ ADVANCED = 0.5
 GODLIKE = 0
 
 class User(object):
-    def __init__(self, name, url, username, password, skill=GODLIKE, logDir="", chromedriver=None):
+    def __init__(self, name, url, username, password, skill=GODLIKE, logDir="", chromedriver=None, workHour=0):
         self.name = name
         self.url = url
         self.username = username
@@ -29,16 +29,17 @@ class User(object):
         self.results = []
         self.hasQuit = False
         self.loggedIn = False
-        self.workHour = 0.001
+        self.workHour = workHour
 
     def work(self):
         self.log("beginning work")
-        login = self.workflows[0]
-        logout = self.workflows[-1]
+        login = self.workflows[0] # Assume the first workflow is always Login.
+        logout = self.workflows[-1] # Assume the last workflow is always Logout.
+
         login.run(self)
         assert self.loggedIn, 'Login failed'
         start = time.time()
-        hourToSec = 3600
+        HOUR_TO_SEC = 3600
         atWork = True
 
         while(atWork):
@@ -58,11 +59,13 @@ class User(object):
                         "workflow %s successful (%is)"
                         % (workflow.name, elapsedTime))
 
-                if ((time.time() - start)/hourToSec) > self.workHour:
+                hourSoFar = (time.time() - start)/HOUR_TO_SEC
+                if hourSoFar > self.workHour:
                     atWork = False
                     break
 
         logout.run(self)
+        assert not self.loggedIn, 'Logout failed'
         totalTime = reduce(lambda acc,w: w.stat[w.name + ".elapsedTime"] + acc, self.results, 0)
         self.log("all workflows complete (%is)" % totalTime)
 
