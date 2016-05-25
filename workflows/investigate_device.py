@@ -14,7 +14,7 @@ class InvestigateDevice(Workflow):
             return result
 
         # TODO - figure out how to get the device in here
-        user.driver.get("https://zenoss5.graveyard.zenoss.loc/zport/dmd/Devices/Server/Linux/devices/237000a8d8/devicedetail#deviceDetailNav:device_overview")
+        user.driver.get(user.url + "/zport/dmd/Devices/Server/Linux/devices/237000a8d8/devicedetail#deviceDetailNav:device_overview")
         if not do(DeviceDetailsPage.viewDeviceGraphs, (user,)):
             return result
 
@@ -35,21 +35,3 @@ class InvestigateDevice(Workflow):
         user.think(8)
 
         return result
-
-def doer(result, user):
-    def fn(actionFn, args):
-        # perform action
-        actionResult = takeAction(result, actionFn, *args)
-        # log success/fail message
-        message = ""
-        if result.success:
-            message += "successfully performed"
-        else:
-            message += "failed to perform"
-        message += " %s" % actionFn.__name__
-        elapsed = actionResult.stat["%s.elapsedTime" % actionFn.__name__]
-        if elapsed is not None:
-            message += " (%is)" % elapsed
-        user.log(message)
-        return result.success
-    return fn

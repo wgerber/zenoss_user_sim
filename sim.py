@@ -108,8 +108,9 @@ if __name__ == '__main__':
         "    url: %s\n"
         "    username: %s\n"
         "    headless: %s\n"
+        "    workflows: %s\n"
         "    logDir: %s") % (
-            args.users, args.url, args.username, "True" if args.headless else "False", args.logDir)
+            args.users, args.url, args.username, "True" if args.headless else "False", args.workflows, args.logDir)
 
     processes = []
     for i in xrange(args.users):
