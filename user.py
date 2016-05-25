@@ -13,7 +13,7 @@ ADVANCED = 0.5
 GODLIKE = 0
 
 class User(object):
-    def __init__(self, name, url, username, password, skill=GODLIKE, logDir="", chromedriver=None):
+    def __init__(self, name, url, username, password, skill=BEGINNER, logDir="", chromedriver=None):
         self.name = name
         self.url = url
         self.username = username
@@ -38,7 +38,7 @@ class User(object):
             self.results.append(result)
             if not result.success:
                 print 'workflow {} failed, user {} quitting'.format(workflow.name, self.name)
-                self.quit()
+                break
             else:
                 self.log("workflow %s successful (%is)" % (workflow.name, result.stat[workflow.name + ".elapsedTime"]))
         totalTime = reduce(lambda acc,w: w.stat[w.name + ".elapsedTime"] + acc, self.results, 0)
@@ -64,8 +64,11 @@ class User(object):
 
     def log(self, message):
         logStr = "[%s] %s - %s\n" % (time.asctime(), self.name, message)
-        self.logFile.write(logStr)
-        self.logFile.flush()
+        if self.hasQuit:
+            print "cannot log to file, user has already quit"
+        else:
+            self.logFile.write(logStr)
+            self.logFile.flush()
         print logStr[:-1]
 
     def screenshot(self, name):

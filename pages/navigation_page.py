@@ -1,9 +1,11 @@
 import traceback
 from common import *
+from pages import DashboardPage
 
 locator = {'events': '#Events-nav-button',
            'infrastructure': '#Infrastructure-nav-button',
-           "logoutLink": "#sign-out-link"}
+           "logoutLink": "#sign-out-link",
+           "dashboardLink": "#Dashboard-nav-button"}
 
 @timed
 @assertPageAfter('title', 'Zenoss: Events')
@@ -12,6 +14,21 @@ def goToEventConsole(user):
     time.sleep(2) # Wait until the pop-up disappears.
     find(user.driver, locator['events']).click()
     result = Result('goToEventConsole')
+    return result
+
+@timed
+@assertPageAfter('title', 'Zenoss: Dashboard')
+def goToDashboard(user):
+    result = Result('goToDashboard')
+    try:
+        find(user.driver, locator['dashboardLink']).click()
+    except:
+        result.fail("unexpected failure navigating to dashboard")
+        traceback.print_exc()
+
+    if not DashboardPage.checkPageLoaded(user):
+        result.fail("dashboard page did not load")
+
     return result
 
 @timed

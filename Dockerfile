@@ -24,6 +24,8 @@ RUN rm chromedriver*
 
 # user simulator
 ADD *.py ./
+ADD workflows ./workflows
+ADD pages ./pages
 
 # TODO - shell script entrypoint to catch signals
 # and stop script before killing the container

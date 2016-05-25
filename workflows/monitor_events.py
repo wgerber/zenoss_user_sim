@@ -1,3 +1,4 @@
+import time
 from common import *
 from pages import LoginPage, EventConsolePage, NavigationPage
 
@@ -12,12 +13,14 @@ class MonitorEvents(Workflow):
             result.fail("user is not logged in")
             return result
 
-        success = doMany(
-            (NavigationPage.goToEventConsole, (user,)),
-            (EventConsolePage.filterBySeverity, (user, "critical")),
-            (EventConsolePage.sortByLastSeen, (user, "ascending")))
-        if not success:
+        workStart = time.time()
+        if not do(NavigationPage.goToEventConsole, (user,)):
             return result
+        if not do(EventConsolePage.filterBySeverity, (user, "critical")):
+            return result
+        if not do(EventConsolePage.sortByLastSeen, (user, "ascending")):
+            return result
+        result.putStat('workTime', time.time() - workStart)
 
         """
         # go to event console
@@ -51,18 +54,11 @@ class MonitorEvents(Workflow):
         """
 
         # stare at the screen REAL hard
-        user.think(4)
+        user.think(8)
 
         # TODO - refresh/filter/sort
 
         return result
-
-def doMany(*args):
-    for a in args:
-        import pdb; pdb.set_trace()
-        if not a[0](*a[1]):
-            return False
-    return True
 
 def doer(result, user):
     def fn(actionFn, args):

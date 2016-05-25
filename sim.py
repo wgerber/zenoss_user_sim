@@ -2,7 +2,7 @@ import time, traceback, argparse
 from threading import Thread
 from xvfbwrapper import Xvfb
 
-from workflows import MonitorEvents, LogInOutWorkflow
+from workflows import MonitorEvents, LogInOutWorkflow, MonitorDashboard
 from user import *
 
 def parse_args():
@@ -52,6 +52,13 @@ def startUser(name, url, username, password, headless, logDir, chromedriver):
     # TODO - configure workflow
     user.addWorkflow([
         LogInOutWorkflow.Login(),
+        MonitorDashboard(),
+        MonitorEvents(),
+        MonitorDashboard(),
+        MonitorEvents(),
+        MonitorDashboard(),
+        MonitorEvents(),
+        MonitorDashboard(),
         MonitorEvents(),
         LogInOutWorkflow.Logout()])
     try:
