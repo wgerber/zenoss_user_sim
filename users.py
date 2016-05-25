@@ -13,7 +13,7 @@ ADVANCED = 0.5
 GODLIKE = 0
 
 class User(object):
-    def __init__(self, name, url, username, password, skill=GODLIKE, logDir="", chromedriver=None):
+    def __init__(self, name, url, username, password, skill=GODLIKE, logDir="", chromedriver=None, workHour=0):
         self.name = name
         self.url = url
         self.username = username
@@ -29,18 +29,43 @@ class User(object):
         self.results = []
         self.hasQuit = False
         self.loggedIn = False
+        self.workHour = workHour
 
     def work(self):
         self.log("beginning work")
-        for workflow in self.workflows:
-            self.log("beginning workflow %s" % workflow.name)
-            result = workflow.run(self)
-            self.results.append(result)
-            if not result.success:
-                print 'workflow {} failed, user {} quitting'.format(workflow.name, self.name)
-                self.quit()
-            else:
-                self.log("workflow %s successful (%is)" % (workflow.name, result.stat[workflow.name + ".elapsedTime"]))
+        login = self.workflows[0] # Assume the first workflow is always Login.
+        logout = self.workflows[-1] # Assume the last workflow is always Logout.
+
+        login.run(self)
+        assert self.loggedIn, 'Login failed'
+        start = time.time()
+        HOUR_TO_SEC = 3600
+        atWork = True
+
+        while(atWork):
+            for workflow in self.workflows[1:-1]:
+                self.log("beginning workflow %s" % workflow.name)
+                result = workflow.run(self)
+                self.results.append(result)
+                elapsedTime = result.stat[workflow.name + ".elapsedTime"]
+
+                if not result.success:
+                    self.log(
+                        'workflow {} failed, user {} quitting'
+                        .format(workflow.name, self.name))
+                    self.quit()
+                else:
+                    self.log(
+                        "workflow %s successful (%is)"
+                        % (workflow.name, elapsedTime))
+
+                hourSoFar = (time.time() - start)/HOUR_TO_SEC
+                if hourSoFar > self.workHour:
+                    atWork = False
+                    break
+
+        logout.run(self)
+        assert not self.loggedIn, 'Logout failed'
         totalTime = reduce(lambda acc,w: w.stat[w.name + ".elapsedTime"] + acc, self.results, 0)
         self.log("all workflows complete (%is)" % totalTime)
 
