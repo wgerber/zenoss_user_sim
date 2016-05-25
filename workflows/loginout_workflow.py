@@ -1,10 +1,6 @@
 import traceback
 from common import *
-import login_page as LoginPage
-import devices_page as DevicesPage
-import event_console_page as EventConsolePage
-import navigation_page as Navigation
-import device_detail_page as DeviceDetailPage
+from pages import LoginPage, NavigationPage
 
 class Login(Workflow):
     @timed
@@ -33,7 +29,7 @@ class Logout(Workflow):
             result.fail("user is not logged in")
             return result
 
-        takeAction(result, Navigation.logout, user)
+        takeAction(result, NavigationPage.logout, user)
         if not result.success:
             return result
 
@@ -57,7 +53,7 @@ class LoginAndLogout(Workflow):
 
         user.think(1)
 
-        takeAction(result, Navigation.logout, user)
+        takeAction(result, NavigationPage.logout, user)
         if not result.success:
             return result
 

@@ -2,9 +2,8 @@ import time, traceback, argparse
 from threading import Thread
 from xvfbwrapper import Xvfb
 
-from workflows import *
-from what_happened_workflow import WhatHappenedLastNight
-from users import *
+from workflows import MonitorEvents, LogInOutWorkflow
+from user import *
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Spin up some simulated users")
@@ -52,11 +51,9 @@ def startUser(name, url, username, password, headless, logDir, chromedriver):
 
     # TODO - configure workflow
     user.addWorkflow([
-        Login(),
-        CheckDevice("10.87.128.58"),
-        AckEvents(),
-        WhatHappenedLastNight(),
-        Logout()])
+        LogInOutWorkflow.Login(),
+        MonitorEvents(),
+        LogInOutWorkflow.Logout()])
     try:
         user.work()
     except:

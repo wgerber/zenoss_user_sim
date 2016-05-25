@@ -3,7 +3,7 @@ import time, os
 from collections import defaultdict
 from selenium import webdriver
 
-from workflows import Workflow
+from common import Workflow
 
 # skill levels determine how long it takes
 # for users to perform tasks
