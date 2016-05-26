@@ -1,4 +1,4 @@
-import sys
+import sys, random
 import time, traceback, argparse
 from xvfbwrapper import Xvfb
 from multiprocessing import Process
@@ -94,6 +94,7 @@ def startUser(name, url, username, password, headless, logDir, chromedriver,
         user.quit()
         if headless:
             xvfb.stop()
+        print "cleaned up %s" % user.name
 
 if __name__ == '__main__':
     args = parse_args()
@@ -122,7 +123,8 @@ if __name__ == '__main__':
         p.start()
         # give xvfb time to grab a display before kicking off
         # a new request
-        time.sleep(0.2)
+        # prevent all users from logging in at once
+        time.sleep(random.uniform(1,10))
     done = 0
     while done < args.users:
         toRemove = []

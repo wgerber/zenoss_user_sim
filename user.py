@@ -13,7 +13,7 @@ ADVANCED = 0.5
 GODLIKE = 0
 
 class User(object):
-    def __init__(self, name, url, username, password, skill=ADVANCED, logDir="", chromedriver=None, workHour=0):
+    def __init__(self, name, url, username, password, skill=INTERMEDIATE, logDir="", chromedriver=None, workHour=0):
         self.name = name
         self.url = url
         self.username = username

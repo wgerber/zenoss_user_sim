@@ -187,7 +187,11 @@ def _getComponentRows(user):
             componentRows.append(row)
     return componentRows
 
-def _selectComponentSection(user, sectionName):
+MAX_COMPONENT_RETRY = 5
+def _selectComponentSection(user, sectionName, attempt=0):
+    if attempt >= MAX_COMPONENT_RETRY:
+        print "gave up looking for %s in details dropdown" % sectionName
+        return False
     dropdownListItems = []
     try:
         find(user.driver, locator["componentCardDisplayDropdown"]).click()
@@ -204,8 +208,8 @@ def _selectComponentSection(user, sectionName):
     except StaleElementReferenceException:
         # this seems ridiculous, but if we find stale
         # elements, just uhh... try again :/
-        print "hit stale element while looking at dropdown. retrying"
-        return _selectComponentSection(user, sectionName)
+        print "%s hit stale element while looking at dropdown on attempt %i" % (user.name, attempt)
+        return _selectComponentSection(user, sectionName, attempt=attempt+1)
 
-    print "didnt find '%s' in components display dropdown" % sectionName
-    return False
+    print "%s didnt find '%s' in components display dropdown on attempt %i" % (user.name, sectionName, attempt)
+    return _selectComponentSection(user, sectionName, attempt=attempt+1)

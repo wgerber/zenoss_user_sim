@@ -65,7 +65,7 @@ def filterBySeverity(user, severity):
     # to go stale
     if changedFilter:
         eventsTable = find(user.driver, elements["eventsTable"])
-        wait(user.driver, EC.staleness_of(eventsTable), 20)
+        wait(user.driver, EC.staleness_of(eventsTable))
 
     return result
 
