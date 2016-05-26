@@ -12,10 +12,8 @@ class MonitorDashboard(Workflow):
             result.fail("user is not logged in")
             return result
 
-        workStart = time.time()
         if not do(NavigationPage.goToDashboard, (user,)):
             return result
-        result.putStat('workTime', time.time() - workStart)
 
         # stare at the screen REAL hard
         user.think(8)

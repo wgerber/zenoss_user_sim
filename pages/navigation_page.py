@@ -10,10 +10,10 @@ locator = {'events': '#Events-nav-button',
 @timed
 @assertPageAfter('title', 'Zenoss: Events')
 def goToEventConsole(user):
-    # TODO - handle popup without sleeps
-    time.sleep(2) # Wait until the pop-up disappears.
+    result = Result(whoami())
+    start = time.time()
     find(user.driver, locator['events']).click()
-    result = Result('goToEventConsole')
+    result.putStat("waitTime", time.time() - start)
     return result
 
 @timed

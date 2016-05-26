@@ -106,7 +106,7 @@ def interactWithDeviceGraphs(user):
     # just take a minute. just stop and take a minute and think
     user.think(4)
 
-    result.putStat("workTime", totalWorkTime)
+    result.putStat("waitTime", totalWorkTime)
     return result
 
 @timed
@@ -160,7 +160,7 @@ def viewComponentDetails(user, componentName):
     # TODO - ensure event table rows have loaded
     user.think(4)
 
-    result.putStat("workTime", totalWorkTime)
+    result.putStat("waitTime", totalWorkTime)
     return result
 
 def getComponentNames(user):
@@ -197,8 +197,8 @@ def _selectComponentSection(user, sectionName, attempt=0):
         find(user.driver, locator["componentCardDisplayDropdown"]).click()
         dropdownListItems = findMany(user.driver, ".x-boundlist .x-boundlist-item")
     except:
-        traceback.print_exc()
-        return False
+        print "%s problem finding or clicking or something on attempt %i" % (user.name, attempt)
+        return _selectComponentSection(user, sectionName, attempt=attempt+1)
 
     try:
         for el in dropdownListItems:

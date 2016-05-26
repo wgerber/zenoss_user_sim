@@ -164,18 +164,25 @@ def doer(result, user):
         # perform action
         severity = "INFO"
         actionResult = takeAction(result, actionFn, *args)
+
         actionResultStr = "succesfully performed" if actionResult.success else "failed to perform"
         actionName = actionFn.__name__
         elapsedTime = actionResult.stat.get("%s.elapsedTime" % actionFn.__name__, None)
         elapsed = "(total %is)" % elapsedTime if elapsedTime is not None else ""
-        workTime = actionResult.stat.get("%s.workTime" % actionFn.__name__, None)
-        work = "(work %is)" % workTime if workTime is not None else ""
+        waitTime = actionResult.stat.get("%s.waitTime" % actionFn.__name__, None)
+        work = "(work %is)" % waitTime if waitTime is not None else ""
         message = "%s %s %s %s" % (actionResultStr, actionName, elapsed, work)
         if not actionResult.success:
             severity = "ERROR"
             if actionResult.error:
                 message += "error: '%s'" % actionResult.error
         user.log(message, severity=severity)
+
+        # put action result waitTime on workflow result
+        if not "%s.waitTime" % result.name in result.stat:
+            result.stat["%s.waitTime" % result.name] = 0
+        result.stat["%s.waitTime" % result.name] += waitTime or 0
+
         return actionResult.success
     return fn
 

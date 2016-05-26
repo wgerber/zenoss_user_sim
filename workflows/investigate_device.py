@@ -14,6 +14,7 @@ class InvestigateDevice(Workflow):
             return result
 
         # TODO - figure out how to get the device in here
+        # TODO - time this
         user.driver.get(user.url + "/zport/dmd/Devices/Server/Linux/devices/237000a8d8/devicedetail#deviceDetailNav:device_overview")
         if not do(DeviceDetailsPage.viewDeviceGraphs, (user,)):
             return result

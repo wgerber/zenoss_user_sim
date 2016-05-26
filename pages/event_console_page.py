@@ -33,8 +33,8 @@ elements = {"severityBtn": "#events_grid-filter-severity-btnEl",
 def filterBySeverity(user, severity):
     result = ActionResult(whoami())
     severities = ["critical", "error", "warning", "info", "debug", "clear"]
-    time.sleep(3) # Wait until the pop-up disappears.
 
+    start = time.time()
     # TODO - handle exceptions
     sevButton = find(user.driver, elements["severityBtn"])
     sevButton.click()
@@ -53,19 +53,19 @@ def filterBySeverity(user, severity):
             if isChecked and currentSev != severity:
                 el.click()
                 changedFilter = True
-                user.think(1)
             # if this is not checked but it should
             # be, then click it
             elif not isChecked and currentSev == severity:
                 el.click()
                 changedFilter = True
-                user.think(1)
 
     # if the filter was changed, wait for the event table
     # to go stale
     if changedFilter:
         eventsTable = find(user.driver, elements["eventsTable"])
         wait(user.driver, EC.staleness_of(eventsTable))
+
+    result.putStat("waitTime", time.time() - start)
 
     return result
 
@@ -75,6 +75,8 @@ def sortByLastSeen(user, newSortDir):
     result = ActionResult(whoami())
     newSortDir = "ASC" if newSortDir == "ascending" else "DESC"
     sortDir = None
+
+    start = time.time()
 
     # TODO - break this after n seconds
     while sortDir != newSortDir:
@@ -87,9 +89,10 @@ def sortByLastSeen(user, newSortDir):
                 sortDir = None
         eventsTable = find(user.driver, elements["eventsTable"])
         header.click()
-        user.think(1)
         # wait until event table updates
         wait(user.driver, EC.staleness_of(eventsTable))
+
+    result.putStat("waitTime", time.time() - start)
 
     return result
 

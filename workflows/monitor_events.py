@@ -13,14 +13,12 @@ class MonitorEvents(Workflow):
             result.fail("user is not logged in")
             return result
 
-        workStart = time.time()
         if not do(NavigationPage.goToEventConsole, (user,)):
             return result
         if not do(EventConsolePage.filterBySeverity, (user, "critical")):
             return result
         if not do(EventConsolePage.sortByLastSeen, (user, "ascending")):
             return result
-        result.putStat('workTime', time.time() - workStart)
 
         """
         # go to event console

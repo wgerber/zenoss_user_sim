@@ -48,6 +48,7 @@ class User(object):
                 result = workflow.run(self)
                 self.results.append(result)
                 elapsedTime = result.stat[workflow.name + ".elapsedTime"]
+                waitTime = result.stat[workflow.name + ".waitTime"]
 
                 if not result.success:
                     self.log(
@@ -57,8 +58,8 @@ class User(object):
                     return
                 else:
                     self.log(
-                        "workflow %s successful (%is)"
-                        % (workflow.name, elapsedTime))
+                        "workflow %s successful (wait %i%%, %is/%is)"
+                        % (workflow.name, (waitTime / elapsedTime) * 100, waitTime, elapsedTime))
 
             # don't quit until all workflows are complete
             hourSoFar = (time.time() - start)/HOUR_TO_SEC
@@ -68,7 +69,9 @@ class User(object):
         logout.run(self)
         assert not self.loggedIn, 'Logout failed'
         totalTime = reduce(lambda acc,w: w.stat[w.name + ".elapsedTime"] + acc, self.results, 0)
-        self.log("all workflows complete (%is)" % totalTime, severity="HAPPY")
+        waitTime = reduce(lambda acc,w: w.stat[w.name + ".waitTime"] + acc, self.results, 0)
+        self.log("all workflows complete (wait %i%%, %is/%is)" %\
+                ((waitTime / totalTime) * 100, waitTime, totalTime), severity="HAPPY")
 
     def quit(self):
         if not self.hasQuit:

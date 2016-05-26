@@ -13,6 +13,8 @@ locator = {"loginField": "#username",
 def login(user, url, username, password):
     result = ActionResult('login')
 
+    waitTime = 0
+    start = time.time()
     try:
         # TODO - enforce a timeout on this
         user.driver.get(url)
@@ -21,7 +23,9 @@ def login(user, url, username, password):
         result.fail("could not navigate to %s" % url)
         traceback.print_exc()
         return result
+    waitTime += time.time() - start
 
+    start = time.time()
     try:
         login_field = find(user.driver, locator["loginField"])
         pass_field = find(user.driver, locator["passField"])
@@ -31,7 +35,9 @@ def login(user, url, username, password):
         result.fail("unexpected failure in login")
         traceback.print_exc()
         return result
+    waitTime += time.time() - start
 
+    start = time.time()
     try:
         login_field.send_keys(username)
         user.think(1)
@@ -43,5 +49,8 @@ def login(user, url, username, password):
         result.fail("unexpected failure in login")
         traceback.print_exc()
         return result
+    waitTime += time.time() - start
+
+    result.putStat("waitTime", waitTime)
 
     return result
