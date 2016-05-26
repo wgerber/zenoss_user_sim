@@ -93,41 +93,6 @@ def sortByLastSeen(user, newSortDir):
 
     return result
 
-@assertPage('title', TITLE)
-def selectAllEvents(user):
-    result = ActionResult('ackAll')
-    start = time.time()
-
-    time.sleep(3) # Wait until the pop-up disappears.
-
-    try:
-        element = 'selectBtn'
-        timeout = 3
-        WebDriverWait(user.driver, timeout).until(
-            EC.presence_of_element_located(locator[element]))
-    except TimeoutException:
-        print '{} did not appear in {} secs'.format(element, timeout)
-        result.success = False
-        return result
-
-    ActionChains(user.driver).key_down(Keys.CONTROL) \
-        .send_keys('a').key_up(Keys.CONTROL).perform()
-
-    return result
-
-@assertPage('title', TITLE)
-def ackAll(user):
-    result = ActionResult('ackAll')
-    start = time.time()
-
-    selectAllEvents(user)
-    user.driver.find_element(*locator['ackBtn']).click()
-
-    elapsedTime = time.time() - start
-
-    result.putStat('elapsedTime', elapsedTime)
-    return result
-
 @timed
 @assertPage('title', TITLE)
 def getEvents(user):
