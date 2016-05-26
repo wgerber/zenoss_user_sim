@@ -123,6 +123,15 @@ if __name__ == '__main__':
         # give xvfb time to grab a display before kicking off
         # a new request
         time.sleep(0.2)
-    # TODO - wait till all processes are done and log a message
-    for p in processes:
-        p.join()
+    done = 0
+    while done < args.users:
+        toRemove = []
+        for p in processes:
+            if not p.is_alive():
+                toRemove.append(p)
+                done += 1
+                print colorizeString("%i down, %i to go" % (done, args.users), "DEBUG")
+        for p in toRemove:
+            processes.remove(p)
+
+    print colorizeString("all processes have exited", "DEBUG")

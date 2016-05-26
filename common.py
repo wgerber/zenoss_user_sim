@@ -8,7 +8,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, StaleElementReferenceException
 
-DEFAULT_TIMEOUT = 10
+DEFAULT_TIMEOUT = 30
 
 class assertPage(object):
     def __init__(self, attr, expected):
