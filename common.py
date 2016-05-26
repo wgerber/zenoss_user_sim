@@ -162,17 +162,37 @@ def takeAction(result, action, *actionArgs):
 def doer(result, user):
     def fn(actionFn, args):
         # perform action
+        severity = "INFO"
         actionResult = takeAction(result, actionFn, *args)
-        # log success/fail message
-        message = ""
-        if result.success:
-            message += "successfully performed"
-        else:
-            message += "failed to perform"
-        message += " %s" % actionFn.__name__
-        elapsed = actionResult.stat["%s.elapsedTime" % actionFn.__name__]
-        if elapsed is not None:
-            message += " (%is)" % elapsed
-        user.log(message)
-        return result.success
+        actionResultStr = "succesfully performed" if actionResult.success else "failed to perform"
+        actionName = actionFn.__name__
+        elapsedTime = actionResult.stat.get("%s.elapsedTime" % actionFn.__name__, None)
+        elapsed = "(total %is)" % elapsedTime if elapsedTime is not None else ""
+        workTime = actionResult.stat.get("%s.workTime" % actionFn.__name__, None)
+        work = "(work %is)" % workTime if workTime is not None else ""
+        message = "%s %s %s %s" % (actionResultStr, actionName, elapsed, work)
+        if not actionResult.success:
+            severity = "ERROR"
+            if actionResult.error:
+                message += "error: '%s'" % actionResult.error
+        user.log(message, severity=severity)
+        return actionResult.success
     return fn
+
+def colorizeString(s, severity):
+    BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
+    RESET_SEQ = "\033[0m"
+    COLOR_SEQ = "\033[1;%dm"
+    BOLD_SEQ = "\033[1m"
+    COLORS = {
+        'WARN': YELLOW,
+        'INFO': WHITE,
+        'DEBUG': BLUE,
+        'ERROR': RED,
+        'HAPPY': GREEN
+    }
+
+    if severity == "INFO":
+        return s
+    else:
+        return COLOR_SEQ % (30 + COLORS[severity]) + s + RESET_SEQ

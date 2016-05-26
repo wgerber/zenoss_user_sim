@@ -69,7 +69,7 @@ def startUser(name, url, username, password, headless, logDir, chromedriver,
         try:
             workflowClass = getattr(sys.modules[__name__], name)
         except AttributeError:
-            user.log('Could not find workflow {}'.format(name))
+            user.log('Could not find workflow {}'.format(name), severity="ERROR")
             user.quit()
 
         workflows.append(workflowClass())
@@ -81,7 +81,7 @@ def startUser(name, url, username, password, headless, logDir, chromedriver,
     try:
         user.work()
     except:
-        user.log("%s unexpectedly failed" % user.name)
+        user.log("%s raised an uncaught exception" % user.name, severity="ERROR")
         traceback.print_exc()
     finally:
         #log results

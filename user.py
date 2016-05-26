@@ -3,7 +3,7 @@ import time, os
 from collections import defaultdict
 from selenium import webdriver
 
-from common import Workflow
+from common import Workflow, colorizeString
 
 # skill levels determine how long it takes
 # for users to perform tasks
@@ -52,9 +52,9 @@ class User(object):
                 if not result.success:
                     self.log(
                         'workflow {} failed, user {} quitting'
-                        .format(workflow.name, self.name))
+                        .format(workflow.name, self.name), severity="ERROR")
                     # TODO - more graceful quit?
-                    raise Exception("user quit")
+                    return
                 else:
                     self.log(
                         "workflow %s successful (%is)"
@@ -68,7 +68,7 @@ class User(object):
         logout.run(self)
         assert not self.loggedIn, 'Logout failed'
         totalTime = reduce(lambda acc,w: w.stat[w.name + ".elapsedTime"] + acc, self.results, 0)
-        self.log("all workflows complete (%is)" % totalTime)
+        self.log("all workflows complete (%is)" % totalTime, severity="HAPPY")
 
     def quit(self):
         if not self.hasQuit:
@@ -88,7 +88,7 @@ class User(object):
     def think(self, duration):
         time.sleep(duration * self.skill)
 
-    def log(self, message, toConsole=True):
+    def log(self, message, toConsole=True, severity="INFO"):
         logStr = "[%s] %s - %s\n" % (time.asctime(), self.name, message)
         if self.hasQuit:
             print "cannot log to file, user has already quit"
@@ -96,7 +96,7 @@ class User(object):
             self.logFile.write(logStr)
             self.logFile.flush()
         if toConsole:
-            print logStr[:-1]
+            print colorizeString(logStr[:-1], severity)
 
     def screenshot(self, name):
         filename = self.logDir + "/%s-%s-screen.png" % (self.name, name)
