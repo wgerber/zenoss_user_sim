@@ -14,6 +14,7 @@ def login(user, url, username, password):
     result = ActionResult('login')
 
     try:
+        # TODO - enforce a timeout on this
         user.driver.get(url)
     except:
         # TODO - get details from exception

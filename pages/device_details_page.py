@@ -209,7 +209,7 @@ def _selectComponentSection(user, sectionName):
         print "hit stale element while looking at dropdown. retrying"
         return _selectComponentSection(user, sectionName)
 
-    print "didnt fine '%s' in components display dropdown" % sectionName
+    print "didnt find '%s' in components display dropdown" % sectionName
     return False
 
 
@@ -266,7 +266,7 @@ def lookAtGraphs(user):
                 graphs = find(user.driver, '#device_graphs-body', 20)
                 findManyIn(graphs, '.graph-panel')
             except TimeoutException:
-                user.log('Timed out while loading device graphs')
+                user.log('Timed out while loading device graphs', severity="WARN")
                 result.success = False
 
     return result

@@ -19,7 +19,7 @@ def filterByIp(user, ip):
         find(user.driver, locator['ipFilter']).send_keys(ip)
         find(user.driver, locator['refreshBtn']).click()
     except TimeoutException:
-        user.log('Failed to enter Ip address to the text area')
+        user.log('Failed to enter Ip address to the text area', severity="WARN")
         result.success = False
         return result
 
@@ -27,7 +27,7 @@ def filterByIp(user, ip):
     try:
         wait(user.driver, EC.staleness_of(deviceTable), 20)
     except TimeoutException:
-        user.log('Failed to update the list of devices after filtering')
+        user.log('Failed to update the list of devices after filtering', severity="WARN")
         result.success = False
         return result
 
@@ -52,7 +52,7 @@ def filterByIp(user, ip):
                     trial += 1
                     devices = []
             if trial > maxTrial:
-                user.log('Filtering by Ip {} reached max trial'.format(ip))
+                user.log('Filtering by Ip {} reached max trial'.format(ip), severity="WARN")
                 result.success = False
                 return result
     except TimeoutException:
