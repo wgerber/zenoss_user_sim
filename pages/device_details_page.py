@@ -1,6 +1,8 @@
 import traceback
 from common import *
 
+MAX_RETRIES = 5
+
 locator = {'navBtns': '#deviceDetailNav-body table .x-grid-row',
            "deviceDetailNav": "#deviceDetailNav",
            "deviceDetailNavRows": "#deviceDetailNav .x-grid-row",
@@ -23,8 +25,12 @@ def checkPageReady(user):
     return result
 
 @timed
-def viewDeviceGraphs(user):
+def viewDeviceGraphs(user, attempt=0):
     result = ActionResult(whoami())
+    if attempt > MAX_RETRIES:
+        result.fail("gave up viewing device graphs")
+        return result
+
     rows = []
     try:
         rows = findMany(user.driver, locator["deviceDetailNavRows"])
@@ -36,7 +42,11 @@ def viewDeviceGraphs(user):
     for row in rows:
         if row.text == "Graphs":
             # TODO - handle stale element
-            row.click()
+            try:
+                row.click()
+            except:
+                user.log("couldnt click 'Graph' device nav row after %i attempt" % attempt)
+                return viewDeviceGraphs(user, attempt+1)
             foundGraphs = True
             return result
 
@@ -75,7 +85,11 @@ def interactWithDeviceGraphs(user):
             result.fail("could not find device graph back button")
             return result
         # pan back
-        backButtonEl.click()
+        try:
+            backButtonEl.click()
+        except:
+            result.fail("couldnt click back button el")
+            return result
         # TODO - wait till graph updates
 
     totalWorkTime += time.time() - start
@@ -98,7 +112,11 @@ def interactWithDeviceGraphs(user):
             result.fail("could not find device graph zoom out button")
             return result
         # zoom out
-        zoomOutEl.click()
+        try:
+            zoomOutEl.click()
+        except:
+            result.fail("couldnt click zoomoutel")
+            return result
         # TODO - wait till graph updates
 
     totalWorkTime += time.time() - start
@@ -119,7 +137,11 @@ def viewComponentDetails(user, componentName):
     foundComp = False
     for rowEl in componentRows:
         if rowEl.text == componentName:
-            rowEl.click()
+            try:
+                rowEl.click()
+            except:
+                result.fail("couldnt click component row el")
+                return result
             foundComp = True
 
     if not foundComp:
@@ -187,9 +209,8 @@ def _getComponentRows(user):
             componentRows.append(row)
     return componentRows
 
-MAX_COMPONENT_RETRY = 5
 def _selectComponentSection(user, sectionName, attempt=0):
-    if attempt >= MAX_COMPONENT_RETRY:
+    if attempt >= MAX_RETRIES:
         print "gave up looking for %s in details dropdown" % sectionName
         return False
     dropdownListItems = []

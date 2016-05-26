@@ -30,6 +30,8 @@ class User(object):
         self.hasQuit = False
         self.loggedIn = False
         self.workHour = workHour
+        self.thinkTime = 0
+        self.workflowsComplete = 0
 
     def work(self):
         self.log("beginning work")
@@ -47,6 +49,7 @@ class User(object):
                 self.log("beginning workflow %s" % workflow.name)
                 result = workflow.run(self)
                 self.results.append(result)
+                self.workflowsComplete += 1
                 elapsedTime = result.stat[workflow.name + ".elapsedTime"]
                 waitTime = result.stat[workflow.name + ".waitTime"]
 
@@ -58,8 +61,8 @@ class User(object):
                     return
                 else:
                     self.log(
-                        "workflow %s successful (wait %i%%, %is/%is)"
-                        % (workflow.name, (waitTime / elapsedTime) * 100, waitTime, elapsedTime))
+                            "workflow %s(#%i) successful (think: %is, wait: %is, elapsed: %is)"
+                        % (workflow.name, self.workflowsComplete, self.thinkTime, waitTime, elapsedTime))
 
             # don't quit until all workflows are complete
             hourSoFar = (time.time() - start)/HOUR_TO_SEC
@@ -70,8 +73,8 @@ class User(object):
         assert not self.loggedIn, 'Logout failed'
         totalTime = reduce(lambda acc,w: w.stat[w.name + ".elapsedTime"] + acc, self.results, 0)
         waitTime = reduce(lambda acc,w: w.stat[w.name + ".waitTime"] + acc, self.results, 0)
-        self.log("all workflows complete (wait %i%%, %is/%is)" %\
-                ((waitTime / totalTime) * 100, waitTime, totalTime), severity="HAPPY")
+        self.log("all workflows (%i) complete (think: %is, wait: %is, elapsed: %is)" %\
+                (self.workflowsComplete, self.thinkTime, waitTime, totalTime), severity="HAPPY")
 
     def quit(self):
         if not self.hasQuit:
@@ -89,10 +92,12 @@ class User(object):
             self.workflows.append(workflow)
 
     def think(self, duration):
-        time.sleep(duration * self.skill)
+        thinkTime = duration * self.skill
+        time.sleep(thinkTime)
+        self.thinkTime += thinkTime
 
     def log(self, message, toConsole=True, severity="INFO"):
-        logStr = "[%s] %s - %s\n" % (time.asctime(), self.name, message)
+        logStr = "[%s] %s %s - %s\n" % (time.asctime(), severity, self.name, message)
         if self.hasQuit:
             print "cannot log to file, user has already quit"
         else:

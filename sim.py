@@ -97,43 +97,51 @@ def startUser(name, url, username, password, headless, logDir, chromedriver,
         print "cleaned up %s" % user.name
 
 if __name__ == '__main__':
-    args = parse_args()
+    try:
+        args = parse_args()
 
-    # create a folder for this run
-    args.logDir = "%s/%s" % (args.logDir, time.time())
-    if not os.path.exists(args.logDir):
-        os.makedirs(args.logDir)
+        # create a folder for this run
+        args.logDir = "%s/%s" % (args.logDir, time.time())
+        if not os.path.exists(args.logDir):
+            os.makedirs(args.logDir)
 
-    # TODO - log additional args
-    print ("starting %i users with options:\n"
-        "    url: %s\n"
-        "    username: %s\n"
-        "    headless: %s\n"
-        "    workflows: %s\n"
-        "    logDir: %s") % (
-            args.users, args.url, args.username, "True" if args.headless else "False", args.workflows, args.logDir)
+        # TODO - log additional args
+        print ("starting %i users with options:\n"
+            "    url: %s\n"
+            "    username: %s\n"
+            "    headless: %s\n"
+            "    workflows: %s\n"
+            "    logDir: %s") % (
+                args.users, args.url, args.username, "True" if args.headless else "False", args.workflows, args.logDir)
 
-    processes = []
-    for i in xrange(args.users):
-        # TODO - skill level
-        # TODO - workflows
-        p = Process(target=startUser, args=(
-            "bob%i"%i, args.url, args.username, args.password, args.headless, args.logDir, args.chromedriver, args.workHour, args.workflows))
-        processes.append(p)
-        p.start()
-        # give xvfb time to grab a display before kicking off
-        # a new request
-        # prevent all users from logging in at once
-        time.sleep(random.uniform(1,10))
-    done = 0
-    while done < args.users:
-        toRemove = []
-        for p in processes:
-            if not p.is_alive():
-                toRemove.append(p)
-                done += 1
-                print colorizeString("%i down, %i to go" % (done, args.users), "DEBUG")
-        for p in toRemove:
-            processes.remove(p)
+        startTime = time.gmtime()
 
-    print colorizeString("all processes have exited", "DEBUG")
+        processes = []
+        for i in xrange(args.users):
+            # TODO - skill level
+            # TODO - workflows
+            p = Process(target=startUser, args=(
+                "bob%i"%i, args.url, args.username, args.password, args.headless, args.logDir, args.chromedriver, args.workHour, args.workflows))
+            processes.append(p)
+            p.start()
+            # give xvfb time to grab a display before kicking off
+            # a new request
+            # prevent all users from logging in at once
+            time.sleep(random.uniform(1,10))
+        done = 0
+        while done < args.users:
+            toRemove = []
+            for p in processes:
+                if not p.is_alive():
+                    toRemove.append(p)
+                    done += 1
+                    print colorizeString("%i down, %i to go" % (done, args.users - done), "DEBUG")
+            for p in toRemove:
+                processes.remove(p)
+
+    finally:
+        endTime = time.gmtime()
+        print colorizeString("all processes have exited", "DEBUG")
+        print colorizeString("start: %s, end: %s" % \
+                (time.strftime('%Y-%m-%dT%H:%M:%SZ', startTime),
+                    time.strftime('%Y-%m-%dT%H:%M:%SZ', endTime)), "DEBUG")
