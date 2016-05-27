@@ -105,11 +105,13 @@ def pushToTsdb(url, queue):
     obj = None
     while obj != 'STOP':
         try:
-            obj = queue.get(timeout=10)
+            # When the timeout is too long, some data get lost.
+            obj = queue.get(timeout=7)
             data += obj
         except Queue.Empty:
             headers={'Content-type': 'application/json', 'Accept': 'text/plain'}
             if data:
+                print 'Posting {} data points to tsdb'.format(len(data))
                 r=requests.post(url + "/api/put", data=json.dumps(data), headers=headers, verify=False)
             data = []
 
@@ -160,6 +162,8 @@ if __name__ == '__main__':
                     print colorizeString("%i down, %i to go" % (done, args.users - done), "DEBUG")
             for p in toRemove:
                 processes.remove(p)
+
+        time.sleep(1)
 
         tsdbQueue.put('STOP')
         tsdbQueue.close()
