@@ -47,7 +47,7 @@ class LoginAndLogout(Workflow):
 
         user.think(1)
 
-        takeAction(result, NavigationPage.logout, user)
+        takeAction(result, NavigationPage.logout)
         if not result.success:
             return result
 

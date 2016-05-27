@@ -13,11 +13,11 @@ class MonitorEvents(Workflow):
             result.fail("user is not logged in")
             return result
 
-        if not do(NavigationPage.goToEventConsole, (user,)):
+        if not do(NavigationPage.goToEventConsole, ()):
             return result
-        if not do(EventConsolePage.filterBySeverity, (user, "critical")):
+        if not do(EventConsolePage.filterBySeverity, ("critical",)):
             return result
-        if not do(EventConsolePage.sortByLastSeen, (user, "ascending")):
+        if not do(EventConsolePage.sortByLastSeen, ("ascending",)):
             return result
 
         """

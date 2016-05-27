@@ -154,8 +154,8 @@ class WorkflowResult(Result):
 
 # performs an action and automatically applies its
 # results to the provided workflowResult
-def takeAction(result, action, *actionArgs):
-    actionResult = action(*actionArgs)
+def takeAction(result, actionFn, user, *actionArgs):
+    actionResult = actionFn(user, *actionArgs)
     result.addActionResult(actionResult)
     return actionResult
 
@@ -163,7 +163,7 @@ def doer(result, user):
     def fn(actionFn, args):
         # perform action
         severity = "INFO"
-        actionResult = takeAction(result, actionFn, *args)
+        actionResult = takeAction(result, actionFn, user, *args)
 
         actionResultStr = "succesfully performed" if actionResult.success else "failed to perform"
         actionName = actionFn.__name__

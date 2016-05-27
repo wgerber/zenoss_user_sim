@@ -12,7 +12,7 @@ class MonitorDashboard(Workflow):
             result.fail("user is not logged in")
             return result
 
-        if not do(NavigationPage.goToDashboard, (user,)):
+        if not do(NavigationPage.goToDashboard, ()):
             return result
 
         # stare at the screen REAL hard
