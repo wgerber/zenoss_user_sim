@@ -8,51 +8,67 @@ locator = {'events': '#Events-nav-button',
            "dashboardLink": "#Dashboard-nav-button"}
 
 @timed
+@retry(3)
 @assertPageAfter('title', 'Zenoss: Events')
 def goToEventConsole(user):
     result = Result(whoami())
     start = time.time()
-    find(user.driver, locator['events']).click()
+    try:
+        find(user.driver, locator['events']).click()
+    except:
+        result.fail("unexpected failure navigating to event console")
+        traceback.print_exc()
+        return result
+    # TODO - make sure page is loaded/ready
     result.putStat("waitTime", time.time() - start)
     return result
 
 @timed
+@retry(3)
 @assertPageAfter('title', 'Zenoss: Dashboard')
 def goToDashboard(user):
-    result = Result('goToDashboard')
+    result = Result(whoami())
+    start = time.time()
     try:
         find(user.driver, locator['dashboardLink']).click()
     except:
         result.fail("unexpected failure navigating to dashboard")
         traceback.print_exc()
-
+        return result
     if not DashboardPage.checkPageLoaded(user):
         result.fail("dashboard page did not load")
-
+    result.putStat("waitTime", time.time() - start)
     return result
 
 @timed
+@retry(3)
 @assertPageAfter('title', 'Zenoss: Devices')
 def goToDevicesPage(user):
-    # TODO - handle popup without sleeps
-    time.sleep(2) # wait pop-up
-    find(user.driver, locator['infrastructure']).click()
-    result = ActionResult('goToDevicesPage')
+    result = Result(whoami())
+    start = time.time()
+    try:
+        find(user.driver, locator['infrastructure']).click()
+    except:
+        result.fail("unexpected failure navigating to device page")
+        traceback.print_exc()
+        return result
+    # TODO - make sure page is loaded/ready
+    result.putStat("waitTime", time.time() - start)
     return result
 
 @timed
+@retry(3)
 @screenshot
 @assertPageAfter('title', 'Login')
 def logout(user):
-    result = ActionResult("logout")
-
+    result = Result(whoami())
+    start = time.time()
     try:
-        time.sleep(3) # Temporary workaround for pop-up on Young's computer
-        logout_link = find(user.driver, locator["logoutLink"])
-        logout_link.click()
+        find(user.driver, locator['logoutLink']).click()
     except:
-        # TODO - get details from exception
-        result.fail("unexpected failure in logout")
+        result.fail("unexpected failure during logout")
         traceback.print_exc()
-
+        return result
+    # TODO - make sure page is loaded/ready
+    result.putStat("waitTime", time.time() - start)
     return result

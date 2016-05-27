@@ -16,7 +16,7 @@ GODLIKE = 0
 REDDIT_TIME = 2
 
 class User(object):
-    def __init__(self, name, url, username, password, skill=INTERMEDIATE, logDir="", chromedriver=None, workHour=0, tsdbQueue = None):
+    def __init__(self, name, url, username, password, skill=INTERMEDIATE, logDir="", chromedriver=None, duration=0, tsdbQueue = None):
         self.name = name
         self.url = url
         self.username = username
@@ -32,13 +32,12 @@ class User(object):
         self.results = []
         self.hasQuit = False
         self.loggedIn = False
-        self.workHour = workHour
+        self.duration = duration
         self.thinkTime = 0
         self.workflowsComplete = 0
         self.tsdbQueue = tsdbQueue
 
     def work(self):
-        self.log("beginning work")
         login = self.workflows[0] # Assume the first workflow is always Login.
         logout = self.workflows[-1] # Assume the last workflow is always Logout.
 
@@ -50,6 +49,7 @@ class User(object):
 
         while(atWork):
             for workflow in self.workflows[1:-1]:
+		self.log("I've worked for %is of my total %is" % (time.time() - start, self.duration))
                 self.log("beginning workflow %s" % workflow.name)
                 result = workflow.run(self)
                 self.results.append(result)
@@ -64,15 +64,16 @@ class User(object):
                         'workflow {} failed'.format(workflow.name, self.name), severity="ERROR")
                 else:
                     self.log(
-                            "workflow %s(#%i) successful (think: %is, wait: %is, elapsed: %is)"
+			"workflow %s(#%i) successful (think: %is, wait: %is, elapsed: %is)"
                         % (workflow.name, self.workflowsComplete, self.thinkTime, waitTime, elapsedTime))
 
                 # take a reddit break
                 time.sleep(REDDIT_TIME)
 
                 # is it quittin time?
-                hourSoFar = (time.time() - start) / HOUR_TO_SEC
-                if hourSoFar > self.workHour:
+                if time.time() - start > self.duration:
+                    self.log("It's quittin time after %is (%is total)" %(time.time() - start, self.duration),
+			severity="DEBUG")
                     atWork = False
                     break
 

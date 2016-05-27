@@ -28,8 +28,8 @@ def parse_args():
     parser.add_argument("--no-headless",
             dest="headless", action="store_false", help="if simulations should run headless")
     parser.set_defaults(headless=True)
-    parser.add_argument('--hour', dest = 'workHour', default = 0,
-            help = 'duration in hours that workflows will be repeated', type = float)
+    parser.add_argument('--duration', dest = 'duration', default = 0,
+            help = 'duration in seconds that workflows will be repeated', type = float)
     parser.add_argument('--workflows', dest = 'workflows', default = '',
             help = 'workflows to run, a comma separated string')
     parser.add_argument('--tsdb-url', dest = 'tsdbUrl', default = '',
@@ -54,13 +54,13 @@ def parse_args():
         return args
 
 def startUser(name, url, username, password, headless, logDir, chromedriver,
-        workHour, workflowNames, tsdbQueue):
+        duration, workflowNames, tsdbQueue):
     if headless:
         xvfb = Xvfb(width=1100, height=800)
         xvfb.start()
 
     user = User(name, url=url, username=username, password=password,
-            logDir=logDir, chromedriver=chromedriver, workHour=workHour,
+            logDir=logDir, chromedriver=chromedriver, duration=duration,
             tsdbQueue=tsdbQueue)
 
     # Always start with Login() and end with Logout(). There has to be at least
@@ -139,7 +139,6 @@ if __name__ == '__main__':
         tsdbPusher.start()
 
         startTime = time.time()
-        workDurationSeconds = args.workHour * HOUR_TO_SEC
         processes = []
         died = 0
         userCount = 0
@@ -154,21 +153,22 @@ if __name__ == '__main__':
                 if not p.is_alive():
                     toRemove.append(p)
                     died += 1
-                    print colorizeString("%i users died so far" % died, "DEBUG")
+                    print colorizeString("%i users died so far, %i currently running" % (died, len(processes)), "DEBUG")
 
             # remove any dead users
             for p in toRemove:
                 processes.remove(p)
 
+            remainingWorkTime = args.duration - (time.time() - startTime)
+
             # if work should continue, add users to keep process list full
             if shouldWork and len(processes) < args.users:
                 # TODO - skill level
-                remainingWorkTime = (time.time() - startTime)
                 userName = "bob%i" % userCount
                 p = mp.Process(target=startUser, args=(
                     userName, args.url, args.username, args.password,
                     args.headless, args.logDir, args.chromedriver,
-                    remainingWorkTime / HOUR_TO_SEC, args.workflows, tsdbQueue))
+                    remainingWorkTime, args.workflows, tsdbQueue))
                 userCount += 1
                 print colorizeString("%s - started user %s" % (time.asctime(), userName), "DEBUG")
                 processes.append(p)
@@ -179,7 +179,7 @@ if __name__ == '__main__':
                 time.sleep(4)
 
             # is it quittin time yet?
-            if time.time() - startTime >= workDurationSeconds and shouldWork:
+            if remainingWorkTime < 0 and shouldWork:
                 shouldWork = False
                 print colorizeString("%s - it's quitting time yall. finish what youre doing" % time.asctime(), "DEBUG")
 

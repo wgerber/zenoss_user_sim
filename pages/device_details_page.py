@@ -25,11 +25,9 @@ def checkPageReady(user):
     return result
 
 @timed
-def viewDeviceGraphs(user, attempt=0):
+@retry(MAX_RETRIES)
+def viewDeviceGraphs(user):
     result = ActionResult(whoami())
-    if attempt > MAX_RETRIES:
-        result.fail("gave up viewing device graphs")
-        return result
 
     rows = []
     try:
@@ -40,14 +38,13 @@ def viewDeviceGraphs(user, attempt=0):
 
     foundGraphs = False
     for row in rows:
-        if row.text == "Graphs":
-            # TODO - handle stale element
-            try:
+        try:
+            if row.text == "Graphs":
                 row.click()
-            except:
-                user.log("couldnt click 'Graph' device nav row after %i attempt" % attempt)
-                return viewDeviceGraphs(user, attempt+1)
-            foundGraphs = True
+                foundGraphs = True
+                return result
+        except:
+            result.fail("couldnt click 'Graph' device nav row")
             return result
 
     if not foundGraphs:
@@ -64,6 +61,7 @@ def viewDeviceGraphs(user, attempt=0):
     return result
 
 @timed
+@retry(MAX_RETRIES)
 def interactWithDeviceGraphs(user):
     result = ActionResult(whoami())
     buttonEls = []
@@ -128,6 +126,7 @@ def interactWithDeviceGraphs(user):
     return result
 
 @timed
+@retry(MAX_RETRIES)
 def viewComponentDetails(user, componentName):
     result = ActionResult(whoami())
     componentRows = _getComponentRows(user)
@@ -209,16 +208,18 @@ def _getComponentRows(user):
             componentRows.append(row)
     return componentRows
 
+# TODO - adjust @retry decorator to work
+# with this function that doesnt return result instance
 def _selectComponentSection(user, sectionName, attempt=0):
     if attempt >= MAX_RETRIES:
-        print "gave up looking for %s in details dropdown" % sectionName
+        user.log("gave up looking for %s in details dropdown" % sectionName)
         return False
     dropdownListItems = []
     try:
         find(user.driver, locator["componentCardDisplayDropdown"]).click()
         dropdownListItems = findMany(user.driver, ".x-boundlist .x-boundlist-item")
     except:
-        print "%s problem finding or clicking or something on attempt %i" % (user.name, attempt)
+        user.log("%s problem finding or clicking or something on attempt %i" % (user.name, attempt))
         return _selectComponentSection(user, sectionName, attempt=attempt+1)
 
     try:
@@ -229,8 +230,8 @@ def _selectComponentSection(user, sectionName, attempt=0):
     except StaleElementReferenceException:
         # this seems ridiculous, but if we find stale
         # elements, just uhh... try again :/
-        print "%s hit stale element while looking at dropdown on attempt %i" % (user.name, attempt)
+        user.log("%s hit stale element while looking at dropdown on attempt %i" % (user.name, attempt))
         return _selectComponentSection(user, sectionName, attempt=attempt+1)
 
-    print "%s didnt find '%s' in components display dropdown on attempt %i" % (user.name, sectionName, attempt)
+    user.log("%s didnt find '%s' in components display dropdown on attempt %i" % (user.name, sectionName, attempt))
     return _selectComponentSection(user, sectionName, attempt=attempt+1)

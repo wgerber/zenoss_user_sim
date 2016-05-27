@@ -84,6 +84,24 @@ def screenshot(f):
         return result
     return wrapper
 
+class retry(object):
+    def __init__(self, maxAttempts=1):
+        self.maxAttempts = maxAttempts
+	self.attempts = 0
+
+    def __call__(self, f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            result = f(*args, **kwargs)
+            while not result.success and self.attempts < self.maxAttempts:
+                print "retrying due to %s" % result.error
+                self.attempts += 1
+                result = f(*args, **kwargs)
+            if self.attempts >= self.maxAttempts:
+                print "gave up retrying"
+            return result
+        return wrapper
+
 def find(d, selector, timeout = DEFAULT_TIMEOUT):
     # NOTE - returns invisible elements as well
     return wait(d, EC.presence_of_element_located((By.CSS_SELECTOR, selector)), timeout)
@@ -165,23 +183,22 @@ def doer(result, user):
         severity = "INFO"
         actionResult = takeAction(result, actionFn, user, *args)
 
-        actionResultStr = "succesfully performed" if actionResult.success else "failed to perform"
-        actionName = actionFn.__name__
-        elapsedTime = actionResult.stat.get("%s.elapsedTime" % actionFn.__name__, None)
-        elapsed = "(total %is)" % elapsedTime if elapsedTime is not None else ""
-        waitTime = actionResult.stat.get("%s.waitTime" % actionFn.__name__, None)
-        work = "(work %is)" % waitTime if waitTime is not None else ""
-        message = "%s %s %s %s" % (actionResultStr, actionName, elapsed, work)
-        if not actionResult.success:
-            severity = "ERROR"
-            if actionResult.error:
-                message += "error: '%s'" % actionResult.error
-        user.log(message, severity=severity)
-
         # put action result waitTime on workflow result
+        waitTime = actionResult.stat.get("%s.waitTime" % actionFn.__name__, None)
         if not "%s.waitTime" % result.name in result.stat:
             result.stat["%s.waitTime" % result.name] = 0
         result.stat["%s.waitTime" % result.name] += waitTime or 0
+
+        if not result.success:
+            actionResultStr = "failed to perform"
+            actionName = actionFn.__name__
+            elapsedTime = actionResult.stat.get("%s.elapsedTime" % actionFn.__name__, None)
+            elapsed = "(total %is)" % elapsedTime if elapsedTime is not None else ""
+            work = "(work %is)" % waitTime if waitTime is not None else ""
+            message = "%s %s %s %s" % (actionResultStr, actionName, elapsed, work)
+            if actionResult.error:
+                message += "error: '%s'" % actionResult.error
+            user.log(message, severity="ERROR")
 
         return actionResult.success
     return fn
