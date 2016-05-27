@@ -28,12 +28,9 @@ def checkPageReady(user, pushActionStat):
     return result
 
 @timed
-def viewDeviceGraphs(user, pushActionSt, attempt=0):
+@retry(MAX_RETRIES)
+def viewDeviceGraphs(user, pushActionStat):
     result = ActionResult(whoami())
-    start = time.time()
-    if attempt > MAX_RETRIES:
-        result.fail("gave up viewing device graphs")
-        return result
 
     rows = []
     try:
@@ -44,14 +41,13 @@ def viewDeviceGraphs(user, pushActionSt, attempt=0):
 
     foundGraphs = False
     for row in rows:
-        if row.text == "Graphs":
-            # TODO - handle stale element
-            try:
+        try:
+            if row.text == "Graphs":
                 row.click()
-            except:
-                user.log("couldnt click 'Graph' device nav row after %i attempt" % attempt)
-                return viewDeviceGraphs(user, attempt+1)
-            foundGraphs = True
+                foundGraphs = True
+                return result
+        except:
+            result.fail("couldnt click 'Graph' device nav row")
             return result
 
     if not foundGraphs:
@@ -71,11 +67,12 @@ def viewDeviceGraphs(user, pushActionSt, attempt=0):
     return result
 
 @timed
+@retry(MAX_RETRIES)
 def interactWithDeviceGraphs(user, pushActionStat):
     result = ActionResult(whoami())
     buttonEls = []
 
-    totalWorkTime = 0
+    totalWaitTime = 0
 
     actionStart = time.time()
 
@@ -101,7 +98,7 @@ def interactWithDeviceGraphs(user, pushActionStat):
             return result
         # TODO - wait till graph updates
 
-    totalWorkTime += time.time() - start
+    totalWaitTime += time.time() - start
 
     waitTime = time.time() - start
 
@@ -132,22 +129,23 @@ def interactWithDeviceGraphs(user, pushActionStat):
 
     waitTime = time.time() - start
 
-    totalWorkTime += time.time() - start
+    totalWaitTime += time.time() - start
 
     # just take a minute. just stop and take a minute and think
     user.think(4)
 
-    result.putStat("waitTime", totalWorkTime)
+    result.putStat("waitTime", totalWaitTime)
 
     pushActionStat(whoami(), 'waitTime', totalWaitTime, actionStart)
 
     return result
 
 @timed
+@retry(MAX_RETRIES)
 def viewComponentDetails(user, pushActionStat, componentName):
     result = ActionResult(whoami())
     componentRows = _getComponentRows(user)
-    totalWorkTime = 0
+    totalWaitTime = 0
 
     actionStart = time.time()
 
@@ -177,7 +175,7 @@ def viewComponentDetails(user, pushActionStat, componentName):
         result.fail("could not view component graphs")
         return result
 
-    totalWorkTime += time.time() - start
+    totalWaitTime += time.time() - start
 
     # TODO - wait till graphs or "no data" message
     # TODO - interact with graphs
@@ -195,12 +193,12 @@ def viewComponentDetails(user, pushActionStat, componentName):
         result.fail("could not find event table")
         return result
 
-    totalWorkTime += time.time() - start
+    totalWaitTime += time.time() - start
 
     # TODO - ensure event table rows have loaded
     user.think(4)
 
-    result.putStat("waitTime", totalWorkTime)
+    result.putStat("waitTime", totalWaitTime)
     pushActionStat(whoami(), 'waitTime', totalWaitTime, actionStart)
 
     return result
@@ -229,16 +227,18 @@ def _getComponentRows(user):
             componentRows.append(row)
     return componentRows
 
+# TODO - adjust @retry decorator to work
+# with this function that doesnt return result instance
 def _selectComponentSection(user, sectionName, attempt=0):
     if attempt >= MAX_RETRIES:
-        print "gave up looking for %s in details dropdown" % sectionName
+        user.log("gave up looking for %s in details dropdown" % sectionName)
         return False
     dropdownListItems = []
     try:
         find(user.driver, locator["componentCardDisplayDropdown"]).click()
         dropdownListItems = findMany(user.driver, ".x-boundlist .x-boundlist-item")
     except:
-        print "%s problem finding or clicking or something on attempt %i" % (user.name, attempt)
+        user.log("%s problem finding or clicking or something on attempt %i" % (user.name, attempt))
         return _selectComponentSection(user, sectionName, attempt=attempt+1)
 
     try:
@@ -249,8 +249,8 @@ def _selectComponentSection(user, sectionName, attempt=0):
     except StaleElementReferenceException:
         # this seems ridiculous, but if we find stale
         # elements, just uhh... try again :/
-        print "%s hit stale element while looking at dropdown on attempt %i" % (user.name, attempt)
+        user.log("%s hit stale element while looking at dropdown on attempt %i" % (user.name, attempt))
         return _selectComponentSection(user, sectionName, attempt=attempt+1)
 
-    print "%s didnt find '%s' in components display dropdown on attempt %i" % (user.name, sectionName, attempt)
+    user.log("%s didnt find '%s' in components display dropdown on attempt %i" % (user.name, sectionName, attempt))
     return _selectComponentSection(user, sectionName, attempt=attempt+1)

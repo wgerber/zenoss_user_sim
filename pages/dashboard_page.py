@@ -13,6 +13,7 @@ def checkPageLoaded(user, pushActionStat):
         find(user.driver, locator["appPortal"])
     except:
         result.fail("could not find appPortal element")
+        return result
     waitTime = time.time() - start
     result.putStat("waitTime", waitTime)
     pushActionStat(whoami(), 'waitTime', waitTime, start)

@@ -8,62 +8,77 @@ locator = {'events': '#Events-nav-button',
            "dashboardLink": "#Dashboard-nav-button"}
 
 @timed
+@retry(3)
 @assertPageAfter('title', 'Zenoss: Events')
 def goToEventConsole(user, pushActionStat):
-    name = whoami()
-    time.sleep(3) # wait pop-up
-    result = Result(name)
-    actionStart = time.time()
-    find(user.driver, locator['events']).click()
-    waitTime = time.time() - actionStart
+    result = Result(whoami())
+    start = time.time()
+    try:
+        find(user.driver, locator['events']).click()
+    except:
+        result.fail("unexpected failure navigating to event console")
+        traceback.print_exc()
+        return result
+    # TODO - make sure page is loaded/ready
+    waitTime = time.time() - start
     result.putStat("waitTime", waitTime)
-    pushActionStat(whoami(), 'waitTime', waitTime, actionStart)
+    pushActionStat(whoami(), 'waitTime', waitTime, start)
     return result
 
 @timed
+@retry(3)
 @assertPageAfter('title', 'Zenoss: Dashboard')
 def goToDashboard(user, pushActionStat):
-    result = Result('goToDashboard')
-    actionStart = time.time()
-
+    result = Result(whoami())
+    start = time.time()
     try:
         find(user.driver, locator['dashboardLink']).click()
     except:
         result.fail("unexpected failure navigating to dashboard")
         traceback.print_exc()
-
-    if not DashboardPage.checkPageLoaded(user):
+        return result
+    if not DashboardPage.checkPageLoaded(user, pushActionStat).success:
         result.fail("dashboard page did not load")
+        return result
 
-    waitTime = time.time() - actionStart
-    pushActionStat(whoami(), 'waitTime', waitTime, actionStart)
+    waitTime = time.time() - start
+    pushActionStat(whoami(), 'waitTime', waitTime, start)
+    result.putStat("waitTime", time.time() - start)
     return result
 
 @timed
+@retry(3)
 @assertPageAfter('title', 'Zenoss: Devices')
 def goToDevicesPage(user, pushActionStat):
-    # TODO - handle popup without sleeps
-    time.sleep(2) # wait pop-up
-    actionStart = time.time()
-    find(user.driver, locator['infrastructure']).click()
-    result = ActionResult('goToDevicesPage')
-    waitTime = time.time() - actionStart
-    pushActionStat(whoami(), 'waitTime', waitTime, actionStart)
+    result = Result(whoami())
+    start = time.time()
+    try:
+        find(user.driver, locator['infrastructure']).click()
+    except:
+        result.fail("unexpected failure navigating to device page")
+        traceback.print_exc()
+        return result
+    # TODO - make sure page is loaded/ready
+    waitTime = time.time() - start
+    result.putStat("waitTime", waitTime)
+    pushActionStat(whoami(), 'waitTime', waitTime, start)
     return result
 
 @timed
+@retry(3)
 @screenshot
 @assertPageAfter('title', 'Login')
 def logout(user, pushActionStat):
-    result = ActionResult("logout")
-
+    result = Result(whoami())
+    start = time.time()
     try:
-        time.sleep(3) # Temporary workaround for pop-up on Young's computer
-        logout_link = find(user.driver, locator["logoutLink"])
-        logout_link.click()
+        find(user.driver, locator['logoutLink']).click()
     except:
-        # TODO - get details from exception
-        result.fail("unexpected failure in logout")
+        result.fail("unexpected failure during logout")
         traceback.print_exc()
-
+        return result
+    # TODO - make sure page is loaded/ready
+    waitTime = time.time() - start
+    result.putStat("waitTime", waitTime)
+    pushActionStat(whoami(), 'waitTime', waitTime, start)
     return result

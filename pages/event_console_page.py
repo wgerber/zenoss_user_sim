@@ -11,6 +11,8 @@ from selenium.common.exceptions import TimeoutException
 
 from common import *
 
+MAX_RETRIES = 5
+
 # TODO: Differentiate EventConsole, EventArchive, etc.
 TITLE = 'Zenoss: Events'
 locator = {'severityBtn': (By.ID, 'events_grid-filter-severity-btnEl'),
@@ -29,6 +31,7 @@ elements = {"severityBtn": "#events_grid-filter-severity-btnEl",
             }
 
 @timed
+@retry(MAX_RETRIES)
 @assertPage('title', TITLE)
 def filterBySeverity(user, pushActionStat, severity):
     time.sleep(3)
@@ -38,9 +41,11 @@ def filterBySeverity(user, pushActionStat, severity):
     actionStart = time.time()
 
     start = time.time()
-    # TODO - handle exceptions
-    sevButton = find(user.driver, elements["severityBtn"])
-    sevButton.click()
+    try:
+        find(user.driver, elements["severityBtn"]).click()
+    except:
+        result.fail("could not find severity button")
+        return result
 
     # NOTE - assumes just one x-menu is visible
     sevEls = findMany(user.driver, ".x-menu .x-menu-item")

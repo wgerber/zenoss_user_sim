@@ -13,8 +13,10 @@ INTERMEDIATE = 1
 ADVANCED = 0.5
 GODLIKE = 0
 
+REDDIT_TIME = 2
+
 class User(object):
-    def __init__(self, name, url, username, password, skill=INTERMEDIATE, logDir="", chromedriver=None, workHour=0, tsdbQueue = None):
+    def __init__(self, name, url, username, password, skill=INTERMEDIATE, logDir="", chromedriver=None, duration=0, tsdbQueue = None):
         self.name = name
         self.url = url
         self.username = username
@@ -30,13 +32,12 @@ class User(object):
         self.results = []
         self.hasQuit = False
         self.loggedIn = False
-        self.workHour = workHour
+        self.duration = duration
         self.thinkTime = 0
         self.workflowsComplete = 0
         self.tsdbQueue = tsdbQueue
 
     def work(self):
-        self.log("beginning work")
         login = self.workflows[0] # Assume the first workflow is always Login.
         logout = self.workflows[-1] # Assume the last workflow is always Logout.
 
@@ -49,6 +50,7 @@ class User(object):
 
         while(atWork):
             for workflow in self.workflows[1:-1]:
+		self.log("I've worked for %is of my total %is" % (time.time() - start, self.duration))
                 self.log("beginning workflow %s" % workflow.name)
                 pushActionStat = getPushActionStat(self.tsdbQueue, self.name, workflow.name)
                 result = workflow.run(self, pushActionStat)
@@ -57,29 +59,38 @@ class User(object):
                 elapsedTime = result.stat[workflow.name + ".elapsedTime"]
                 waitTime = result.stat[workflow.name + ".waitTime"]
 
-#                self.postStat(result.stat)
+                # self.postStat(result.stat)
 
                 if not result.success:
                     self.log(
-                        'workflow {} failed, user {} quitting'
-                        .format(workflow.name, self.name), severity="ERROR")
-                    # TODO - more graceful quit?
-                    return
+                        'workflow {} failed'.format(workflow.name, self.name), severity="ERROR")
                 else:
                     self.log(
-                            "workflow %s(#%i) successful (think: %is, wait: %is, elapsed: %is)"
+			"workflow %s(#%i) successful (think: %is, wait: %is, elapsed: %is)"
                         % (workflow.name, self.workflowsComplete, self.thinkTime, waitTime, elapsedTime))
 
-            # don't quit until all workflows are complete
-            hourSoFar = (time.time() - start)/HOUR_TO_SEC
-            if hourSoFar > self.workHour:
-                atWork = False
-                break
+                # take a reddit break
+                time.sleep(REDDIT_TIME)
+
+                # is it quittin time?
+                if time.time() - start > self.duration:
+                    self.log("It's quittin time after %is (%is total)" %(time.time() - start, self.duration),
+			severity="DEBUG")
+                    atWork = False
+                    break
+
         pushActionStat = getPushActionStat(self.tsdbQueue, self.name, logout.name)
         logout.run(self, pushActionStat)
+
         assert not self.loggedIn, 'Logout failed'
-        totalTime = reduce(lambda acc,w: w.stat[w.name + ".elapsedTime"] + acc, self.results, 0)
-        waitTime = reduce(lambda acc,w: w.stat[w.name + ".waitTime"] + acc, self.results, 0)
+        totalTime = 0
+        waitTime = 0
+        # TODO - dont bother with stats at all
+        try:
+            totalTime = reduce(lambda acc,w: w.stat[w.name + ".elapsedTime"] + acc, self.results, 0)
+            waitTime = reduce(lambda acc,w: w.stat[w.name + ".waitTime"] + acc, self.results, 0)
+        except:
+            pass
         self.log("all workflows (%i) complete (think: %is, wait: %is, elapsed: %is)" %\
                 (self.workflowsComplete, self.thinkTime, waitTime, totalTime), severity="HAPPY")
 
