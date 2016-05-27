@@ -14,7 +14,7 @@ RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key
 RUN apt update -qq
 RUN apt install -y -q google-chrome-stable
 
-RUN pip install selenium xvfbwrapper
+RUN pip install selenium xvfbwrapper requests
 
 # download and install chromedriver
 RUN wget -c https://chromedriver.storage.googleapis.com/2.21/chromedriver_linux64.zip

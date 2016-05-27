@@ -7,6 +7,8 @@ import Queue
 from workflows import MonitorEvents, LogInOutWorkflow, MonitorDashboard, InvestigateDevice
 from user import *
 
+HOUR_TO_SEC = 3600
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Spin up some simulated users")
     parser.add_argument("-u", "--url",
@@ -34,7 +36,6 @@ def parse_args():
             help = 'OpenTSDB URL')
 
     # TODO - skill level
-    # TODO - workflow
     # TODO - more sensible defaults and argument config
 
     args = parser.parse_args()
@@ -62,7 +63,6 @@ def startUser(name, url, username, password, headless, logDir, chromedriver,
             logDir=logDir, chromedriver=chromedriver, workHour=workHour,
             tsdbQueue=tsdbQueue)
 
-    # TODO - configure workflow
     # Always start with Login() and end with Logout(). There has to be at least
     # one workflow between Login() and Logout().
     workflows = []
@@ -119,7 +119,7 @@ if __name__ == '__main__':
     try:
         args = parse_args()
 
-        # create a folder for this run
+        # create a log directory for this run
         args.logDir = "%s/%s" % (args.logDir, time.time())
         if not os.path.exists(args.logDir):
             os.makedirs(args.logDir)
@@ -133,44 +133,65 @@ if __name__ == '__main__':
             "    logDir: %s") % (
                 args.users, args.url, args.username, "True" if args.headless else "False", args.workflows, args.logDir)
 
-        startTime = time.gmtime()
-
         tsdbQueue = mp.Queue()
         tsdbPusher = mp.Process(
                 target = pushToTsdb, args = (args.tsdbUrl, tsdbQueue,))
         tsdbPusher.start()
 
+        startTime = time.time()
+        workDurationSeconds = args.workHour * HOUR_TO_SEC
         processes = []
-        for i in xrange(args.users):
-            # TODO - skill level
-            # TODO - workflows
-            p = mp.Process(target=startUser, args=(
-                "bob%i"%i, args.url, args.username, args.password, args.headless, args.logDir, args.chromedriver, args.workHour, args.workflows, tsdbQueue))
-            processes.append(p)
-            p.start()
-            # give xvfb time to grab a display before kicking off
-            # a new request
-            # prevent all users from logging in at once
-            time.sleep(random.uniform(1,10))
-        done = 0
-        while done < args.users:
+        died = 0
+        userCount = 0
+        shouldWork = True
+
+        # if its worktime or there are any processes
+        # left working, do work!
+        while len(processes) or shouldWork:
+            # check for users that died
             toRemove = []
             for p in processes:
                 if not p.is_alive():
                     toRemove.append(p)
-                    done += 1
-                    print colorizeString("%i down, %i to go" % (done, args.users - done), "DEBUG")
+                    died += 1
+                    print colorizeString("%i users died so far" % died, "DEBUG")
+
+            # remove any dead users
             for p in toRemove:
                 processes.remove(p)
 
-        time.sleep(1)
+            # if work should continue, add users to keep process list full
+            if shouldWork and len(processes) < args.users:
+                # TODO - skill level
+                remainingWorkTime = (time.time() - startTime)
+                userName = "bob%i" % userCount
+                p = mp.Process(target=startUser, args=(
+                    userName, args.url, args.username, args.password,
+                    args.headless, args.logDir, args.chromedriver,
+                    remainingWorkTime / HOUR_TO_SEC, args.workflows, tsdbQueue))
+                userCount += 1
+                print colorizeString("%s - started user %s" % (time.asctime(), userName), "DEBUG")
+                processes.append(p)
+                p.start()
+                # give xvfb time to grab a display before kicking off
+                # a new request
+                # prevent all users from logging in at once
+                time.sleep(4)
 
+            # is it quittin time yet?
+            if time.time() - startTime >= workDurationSeconds and shouldWork:
+                shouldWork = False
+                print colorizeString("%s - it's quitting time yall. finish what youre doing" % time.asctime(), "DEBUG")
+
+    except:
+        traceback.print_exc()
+
+    finally:
         tsdbQueue.put('STOP')
         tsdbQueue.close()
         tsdbQueue.join_thread()
-    finally:
-        endTime = time.gmtime()
+        endTime = time.time()
         print colorizeString("all processes have exited", "DEBUG")
         print colorizeString("start: %s, end: %s" % \
-                (time.strftime('%Y-%m-%dT%H:%M:%SZ', startTime),
-                    time.strftime('%Y-%m-%dT%H:%M:%SZ', endTime)), "DEBUG")
+                (time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(startTime)),
+                    time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(endTime))), "DEBUG")
