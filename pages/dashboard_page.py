@@ -1,5 +1,5 @@
-import time
-from common import assertPage, ActionResult, whoami
+import time, traceback
+from common import assertPage, ActionResult, whoami, find
 
 TITLE = 'Zenoss: Dashboard'
 locator = {'header': '#header',
@@ -13,7 +13,7 @@ def checkPageLoaded(user, pushActionStat):
         find(user.driver, locator["appPortal"])
     except:
         result.fail("could not find appPortal element")
-        return result
+        traceback.print_exc()
     waitTime = time.time() - start
     result.putStat("waitTime", waitTime)
     pushActionStat(whoami(), 'waitTime', waitTime, start)

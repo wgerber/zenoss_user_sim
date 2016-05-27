@@ -134,8 +134,9 @@ if __name__ == '__main__':
             "    username: %s\n"
             "    headless: %s\n"
             "    workflows: %s\n"
+            "    duration: %is\n"
             "    logDir: %s") % (
-                args.users, args.url, args.username, "True" if args.headless else "False", args.workflows, args.logDir)
+                args.users, args.url, args.username, "True" if args.headless else "False", args.workflows, args.duration, args.logDir)
 
         tsdbQueue = mp.Queue()
         tsdbPusher = mp.Process(
