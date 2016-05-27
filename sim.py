@@ -112,7 +112,11 @@ def pushToTsdb(url, queue):
             headers={'Content-type': 'application/json', 'Accept': 'text/plain'}
             if data:
                 print 'Posting {} data points to tsdb'.format(len(data))
-                r=requests.post(url + "/api/put", data=json.dumps(data), headers=headers, verify=False)
+                r=requests.post(
+                        url + "/api/put",
+                        data=json.dumps(data), headers=headers, verify=False)
+                print 'Posting data to tsdb {}'.format(
+                        'succeeded' if r.ok else 'failed')
             data = []
 
 if __name__ == '__main__':

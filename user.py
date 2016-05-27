@@ -4,7 +4,7 @@ import requests, json
 from collections import defaultdict
 from selenium import webdriver
 
-from common import Workflow, colorizeString
+from common import Workflow, colorizeString, getPushActionStat
 
 # skill levels determine how long it takes
 # for users to perform tasks
@@ -41,7 +41,8 @@ class User(object):
         login = self.workflows[0] # Assume the first workflow is always Login.
         logout = self.workflows[-1] # Assume the last workflow is always Logout.
 
-        login.run(self)
+        pushActionStat = getPushActionStat(self.tsdbQueue, self.name, login.name)
+        login.run(self, pushActionStat)
         assert self.loggedIn, 'Login failed'
         start = time.time()
         HOUR_TO_SEC = 3600
@@ -51,13 +52,14 @@ class User(object):
             for workflow in self.workflows[1:-1]:
 		self.log("I've worked for %is of my total %is" % (time.time() - start, self.duration))
                 self.log("beginning workflow %s" % workflow.name)
-                result = workflow.run(self)
+                pushActionStat = getPushActionStat(self.tsdbQueue, self.name, workflow.name)
+                result = workflow.run(self, pushActionStat)
                 self.results.append(result)
                 self.workflowsComplete += 1
                 elapsedTime = result.stat[workflow.name + ".elapsedTime"]
                 waitTime = result.stat[workflow.name + ".waitTime"]
 
-                self.postStat(result.stat)
+#                self.postStat(result.stat)
 
                 if not result.success:
                     self.log(
@@ -77,7 +79,9 @@ class User(object):
                     atWork = False
                     break
 
-        logout.run(self)
+        pushActionStat = getPushActionStat(self.tsdbQueue, self.name, logout.name)
+        logout.run(self, pushActionStat)
+
         assert not self.loggedIn, 'Logout failed'
         totalTime = 0
         waitTime = 0

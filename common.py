@@ -177,6 +177,17 @@ def takeAction(result, actionFn, user, *actionArgs):
     result.addActionResult(actionResult)
     return actionResult
 
+def pushStat(queue, user, workflow, action, key, value, timestamp):
+    if queue:
+        tags = {'user': user, 'workflow': workflow, 'action': action}
+        data = [{'timestamp': timestamp, 'metric': key, 'value': value, 'tags': tags}]
+        queue.put(data)
+
+def getPushActionStat(queue, user, workflow):
+    def fn(action, key, value, timestamp):
+        pushStat(queue, user, workflow, action, key, value, timestamp)
+    return fn
+
 def doer(result, user):
     def fn(actionFn, args):
         # perform action
