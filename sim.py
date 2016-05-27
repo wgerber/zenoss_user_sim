@@ -160,6 +160,7 @@ if __name__ == '__main__':
                     toRemove.append(p)
                     done += 1
                     print colorizeString("%i down, %i to go" % (done, args.users - done), "DEBUG")
+                    # TODO - add a new user
             for p in toRemove:
                 processes.remove(p)
 

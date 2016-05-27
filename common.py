@@ -84,6 +84,24 @@ def screenshot(f):
         return result
     return wrapper
 
+class retry(object):
+    def __init__(self, maxAttempts=1):
+        self.maxAttempts = maxAttempts
+	self.attempts = 0
+
+    def __call__(self, f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            result = f(*args, **kwargs)
+            while not result.success and self.attempts < self.maxAttempts:
+                print "retrying"
+                self.attempts += 1
+                result = f(*args, **kwargs)
+            if self.attempts >= self.maxAttempts:
+                print "gave up retrying"
+            return result
+        return wrapper
+
 def find(d, selector, timeout = DEFAULT_TIMEOUT):
     # NOTE - returns invisible elements as well
     return wait(d, EC.presence_of_element_located((By.CSS_SELECTOR, selector)), timeout)

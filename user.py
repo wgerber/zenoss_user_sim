@@ -13,6 +13,8 @@ INTERMEDIATE = 1
 ADVANCED = 0.5
 GODLIKE = 0
 
+REDDIT_TIME = 2
+
 class User(object):
     def __init__(self, name, url, username, password, skill=INTERMEDIATE, logDir="", chromedriver=None, workHour=0, tsdbQueue = None):
         self.name = name
@@ -62,11 +64,13 @@ class User(object):
                         'workflow {} failed, user {} quitting'
                         .format(workflow.name, self.name), severity="ERROR")
                     # TODO - more graceful quit?
-                    return
+                    #return
                 else:
                     self.log(
                             "workflow %s(#%i) successful (think: %is, wait: %is, elapsed: %is)"
                         % (workflow.name, self.workflowsComplete, self.thinkTime, waitTime, elapsedTime))
+
+                time.sleep(REDDIT_TIME)
 
             # don't quit until all workflows are complete
             hourSoFar = (time.time() - start)/HOUR_TO_SEC
@@ -75,8 +79,8 @@ class User(object):
                 break
         logout.run(self)
         assert not self.loggedIn, 'Logout failed'
-        totalTime = reduce(lambda acc,w: w.stat[w.name + ".elapsedTime"] + acc, self.results, 0)
-        waitTime = reduce(lambda acc,w: w.stat[w.name + ".waitTime"] + acc, self.results, 0)
+        totalTime = reduce(lambda acc,w: w.stat.get(w.name + ".elapsedTime", 0) + acc, self.results, 0)
+        waitTime = reduce(lambda acc,w: w.stat.get(w.name + ".waitTime", 0) + acc, self.results, 0)
         self.log("all workflows (%i) complete (think: %is, wait: %is, elapsed: %is)" %\
                 (self.workflowsComplete, self.thinkTime, waitTime, totalTime), severity="HAPPY")
 

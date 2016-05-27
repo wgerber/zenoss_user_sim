@@ -25,11 +25,9 @@ def checkPageReady(user):
     return result
 
 @timed
-def viewDeviceGraphs(user, attempt=0):
+@retry(MAX_RETRIES)
+def viewDeviceGraphs(user):
     result = ActionResult(whoami())
-    if attempt > MAX_RETRIES:
-        result.fail("gave up viewing device graphs")
-        return result
 
     rows = []
     try:
@@ -38,21 +36,20 @@ def viewDeviceGraphs(user, attempt=0):
         result.fail("could not find device detail nav rows")
         return result
 
-    foundGraphs = False
-    for row in rows:
-        if row.text == "Graphs":
-            # TODO - handle stale element
+        foundGraphs = False
+        for row in rows:
             try:
-                row.click()
+                if row.text == "Graphs":
+                    row.click()
+                foundGraphs = True
+                return result
             except:
-                user.log("couldnt click 'Graph' device nav row after %i attempt" % attempt)
-                return viewDeviceGraphs(user, attempt+1)
-            foundGraphs = True
-            return result
+                result.fail("couldnt click 'Graph' device nav row")
+                return result
 
-    if not foundGraphs:
-        result.fail("could not find graphs nav link")
-        return result
+        if not foundGraphs:
+            result.fail("could not find graphs nav link")
+            return result
 
     #wait till at least 1 graph loads
     try:
@@ -64,6 +61,7 @@ def viewDeviceGraphs(user, attempt=0):
     return result
 
 @timed
+@retry(MAX_RETRIES)
 def interactWithDeviceGraphs(user):
     result = ActionResult(whoami())
     buttonEls = []
@@ -128,6 +126,7 @@ def interactWithDeviceGraphs(user):
     return result
 
 @timed
+@retry(MAX_RETRIES)
 def viewComponentDetails(user, componentName):
     result = ActionResult(whoami())
     componentRows = _getComponentRows(user)
