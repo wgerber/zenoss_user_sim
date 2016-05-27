@@ -1,7 +1,8 @@
 import sys, random
 import time, traceback, argparse
 from xvfbwrapper import Xvfb
-from multiprocessing import Process
+import multiprocessing as mp
+import Queue
 
 from workflows import MonitorEvents, LogInOutWorkflow, MonitorDashboard, InvestigateDevice
 from user import *
@@ -29,6 +30,8 @@ def parse_args():
             help = 'duration in hours that workflows will be repeated', type = float)
     parser.add_argument('--workflows', dest = 'workflows', default = '',
             help = 'workflows to run, a comma separated string')
+    parser.add_argument('--tsdb-url', dest = 'tsdbUrl', default = '',
+            help = 'OpenTSDB URL')
 
     # TODO - skill level
     # TODO - workflow
@@ -50,13 +53,14 @@ def parse_args():
         return args
 
 def startUser(name, url, username, password, headless, logDir, chromedriver,
-        workHour, workflowNames):
+        workHour, workflowNames, tsdbQueue):
     if headless:
         xvfb = Xvfb(width=1100, height=800)
         xvfb.start()
 
     user = User(name, url=url, username=username, password=password,
-            logDir=logDir, chromedriver=chromedriver, workHour=workHour)
+            logDir=logDir, chromedriver=chromedriver, workHour=workHour,
+            tsdbQueue=tsdbQueue)
 
     # TODO - configure workflow
     # Always start with Login() and end with Logout(). There has to be at least
@@ -96,6 +100,19 @@ def startUser(name, url, username, password, headless, logDir, chromedriver,
             xvfb.stop()
         print "cleaned up %s" % user.name
 
+def pushToTsdb(url, queue):
+    data = []
+    obj = None
+    while obj != 'STOP':
+        try:
+            obj = queue.get(timeout=10)
+            data += obj
+        except Queue.Empty:
+            headers={'Content-type': 'application/json', 'Accept': 'text/plain'}
+            if data:
+                r=requests.post(url + "/api/put", data=json.dumps(data), headers=headers, verify=False)
+            data = []
+
 if __name__ == '__main__':
     try:
         args = parse_args()
@@ -116,12 +133,17 @@ if __name__ == '__main__':
 
         startTime = time.gmtime()
 
+        tsdbQueue = mp.Queue()
+        tsdbPusher = mp.Process(
+                target = pushToTsdb, args = (args.tsdbUrl, tsdbQueue,))
+        tsdbPusher.start()
+
         processes = []
         for i in xrange(args.users):
             # TODO - skill level
             # TODO - workflows
-            p = Process(target=startUser, args=(
-                "bob%i"%i, args.url, args.username, args.password, args.headless, args.logDir, args.chromedriver, args.workHour, args.workflows))
+            p = mp.Process(target=startUser, args=(
+                "bob%i"%i, args.url, args.username, args.password, args.headless, args.logDir, args.chromedriver, args.workHour, args.workflows, tsdbQueue))
             processes.append(p)
             p.start()
             # give xvfb time to grab a display before kicking off
@@ -139,6 +161,9 @@ if __name__ == '__main__':
             for p in toRemove:
                 processes.remove(p)
 
+        tsdbQueue.put('STOP')
+        tsdbQueue.close()
+        tsdbQueue.join_thread()
     finally:
         endTime = time.gmtime()
         print colorizeString("all processes have exited", "DEBUG")
