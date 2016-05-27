@@ -4,7 +4,7 @@ from pages import LoginPage, DashboardPage, NavigationPage
 class MonitorDashboard(Workflow):
     @timed
     @screenshot
-    def run(self, user):
+    def run(self, user, pushActionStat):
         result = WorkflowResult(self.name)
         do = doer(result, user)
 
@@ -12,7 +12,7 @@ class MonitorDashboard(Workflow):
             result.fail("user is not logged in")
             return result
 
-        if not do(NavigationPage.goToDashboard, ()):
+        if not do(NavigationPage.goToDashboard, (pushActionStat,)):
             return result
 
         # stare at the screen REAL hard

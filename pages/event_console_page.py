@@ -30,9 +30,12 @@ elements = {"severityBtn": "#events_grid-filter-severity-btnEl",
 
 @timed
 @assertPage('title', TITLE)
-def filterBySeverity(user, severity):
+def filterBySeverity(user, pushActionStat, severity):
+    time.sleep(3)
     result = ActionResult(whoami())
     severities = ["critical", "error", "warning", "info", "debug", "clear"]
+
+    actionStart = time.time()
 
     start = time.time()
     # TODO - handle exceptions
@@ -67,14 +70,18 @@ def filterBySeverity(user, severity):
 
     result.putStat("waitTime", time.time() - start)
 
+    waitTime = time.time() - actionStart
+    pushActionStat(whoami(), 'waitTime', waitTime, actionStart)
     return result
 
 @timed
 @assertPage('title', TITLE)
-def sortByLastSeen(user, newSortDir):
+def sortByLastSeen(user, pushActionStat, newSortDir):
     result = ActionResult(whoami())
     newSortDir = "ASC" if newSortDir == "ascending" else "DESC"
     sortDir = None
+
+    actionStart = time.time()
 
     start = time.time()
 
@@ -93,6 +100,8 @@ def sortByLastSeen(user, newSortDir):
         wait(user.driver, EC.staleness_of(eventsTable))
 
     result.putStat("waitTime", time.time() - start)
+    waitTime = time.time() - actionStart
+    pushActionStat(whoami(), 'waitTime', waitTime, actionStart)
 
     return result
 
@@ -101,6 +110,7 @@ def sortByLastSeen(user, newSortDir):
 def getEvents(user):
     result = ActionResult('getEvents')
 
+    actionStart = time.time()
     eventRows = []
     try:
         eventRows = findMany(user.driver, elements["eventRows"])
@@ -133,5 +143,7 @@ def getEvents(user):
         events.append(event)
 
     result.putData('events', events)
+    waitTime = time.time() - actionStart
+    pushActionStat(whoami(), 'waitTime', waitTime, actionStart)
 
     return result

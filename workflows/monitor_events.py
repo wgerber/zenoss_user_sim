@@ -5,7 +5,7 @@ from pages import LoginPage, EventConsolePage, NavigationPage
 class MonitorEvents(Workflow):
     @timed
     @screenshot
-    def run(self, user):
+    def run(self, user, pushActionStat):
         result = WorkflowResult(self.name)
         do = doer(result, user)
 
@@ -13,11 +13,11 @@ class MonitorEvents(Workflow):
             result.fail("user is not logged in")
             return result
 
-        if not do(NavigationPage.goToEventConsole, ()):
+        if not do(NavigationPage.goToEventConsole, (pushActionStat,)):
             return result
-        if not do(EventConsolePage.filterBySeverity, ("critical",)):
+        if not do(EventConsolePage.filterBySeverity, (pushActionStat, "critical",)):
             return result
-        if not do(EventConsolePage.sortByLastSeen, ("ascending",)):
+        if not do(EventConsolePage.sortByLastSeen, (pushActionStat, "ascending",)):
             return result
 
         """

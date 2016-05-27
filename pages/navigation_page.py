@@ -9,17 +9,23 @@ locator = {'events': '#Events-nav-button',
 
 @timed
 @assertPageAfter('title', 'Zenoss: Events')
-def goToEventConsole(user):
-    result = Result(whoami())
-    start = time.time()
+def goToEventConsole(user, pushActionStat):
+    name = whoami()
+    time.sleep(3) # wait pop-up
+    result = Result(name)
+    actionStart = time.time()
     find(user.driver, locator['events']).click()
-    result.putStat("waitTime", time.time() - start)
+    waitTime = time.time() - actionStart
+    result.putStat("waitTime", waitTime)
+    pushActionStat(whoami(), 'waitTime', waitTime, actionStart)
     return result
 
 @timed
 @assertPageAfter('title', 'Zenoss: Dashboard')
-def goToDashboard(user):
+def goToDashboard(user, pushActionStat):
     result = Result('goToDashboard')
+    actionStart = time.time()
+
     try:
         find(user.driver, locator['dashboardLink']).click()
     except:
@@ -29,21 +35,26 @@ def goToDashboard(user):
     if not DashboardPage.checkPageLoaded(user):
         result.fail("dashboard page did not load")
 
+    waitTime = time.time() - actionStart
+    pushActionStat(whoami(), 'waitTime', waitTime, actionStart)
     return result
 
 @timed
 @assertPageAfter('title', 'Zenoss: Devices')
-def goToDevicesPage(user):
+def goToDevicesPage(user, pushActionStat):
     # TODO - handle popup without sleeps
     time.sleep(2) # wait pop-up
+    actionStart = time.time()
     find(user.driver, locator['infrastructure']).click()
     result = ActionResult('goToDevicesPage')
+    waitTime = time.time() - actionStart
+    pushActionStat(whoami(), 'waitTime', waitTime, actionStart)
     return result
 
 @timed
 @screenshot
 @assertPageAfter('title', 'Login')
-def logout(user):
+def logout(user, pushActionStat):
     result = ActionResult("logout")
 
     try:

@@ -6,12 +6,14 @@ locator = {'header': '#header',
         "appPortal": "#app-portal"}
 
 @assertPage('title', TITLE)
-def checkPageLoaded(user):
+def checkPageLoaded(user, pushActionStat):
     result = ActionResult(whoami())
     start = time.time()
     try:
         find(user.driver, locator["appPortal"])
     except:
         result.fail("could not find appPortal element")
-    result.putStat("waitTime", time.time() - start)
+    waitTime = time.time() - start
+    result.putStat("waitTime", waitTime)
+    pushActionStat(whoami(), 'waitTime', waitTime, start)
     return result

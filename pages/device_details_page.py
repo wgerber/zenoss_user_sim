@@ -16,17 +16,21 @@ locator = {'navBtns': '#deviceDetailNav-body table .x-grid-row',
            "componentCardEventTable": "#component_card-body #event_panel .x-grid-table"}
 
 @timed
-def checkPageReady(user):
+def checkPageReady(user, pushActionStat):
     result = ActionResult(whoami())
+    start = time.time()
     try:
         find(user.driver, locator["deviceDetailNav"])
     except:
         result.fail("could not find deviceDetailNav element")
+    waitTime = time.time() - start
+    pushActionStat(whoami(), 'waitTime', waitTime, start)
     return result
 
 @timed
-def viewDeviceGraphs(user, attempt=0):
+def viewDeviceGraphs(user, pushActionSt, attempt=0):
     result = ActionResult(whoami())
+    start = time.time()
     if attempt > MAX_RETRIES:
         result.fail("gave up viewing device graphs")
         return result
@@ -61,14 +65,19 @@ def viewDeviceGraphs(user, attempt=0):
         result.fail("could not find a single teeny tiny itty bitty graph. Not even one")
         return result
 
+    waitTime = time.time() - start
+    pushActionStat(whoami(), 'waitTime', waitTime, start)
+
     return result
 
 @timed
-def interactWithDeviceGraphs(user):
+def interactWithDeviceGraphs(user, pushActionStat):
     result = ActionResult(whoami())
     buttonEls = []
 
     totalWorkTime = 0
+
+    actionStart = time.time()
 
     start = time.time()
     # pan back a few times
@@ -93,6 +102,8 @@ def interactWithDeviceGraphs(user):
         # TODO - wait till graph updates
 
     totalWorkTime += time.time() - start
+
+    waitTime = time.time() - start
 
     # contemplate life, the universe, and everything
     user.think(4)
@@ -119,19 +130,26 @@ def interactWithDeviceGraphs(user):
             return result
         # TODO - wait till graph updates
 
+    waitTime = time.time() - start
+
     totalWorkTime += time.time() - start
 
     # just take a minute. just stop and take a minute and think
     user.think(4)
 
     result.putStat("waitTime", totalWorkTime)
+
+    pushActionStat(whoami(), 'waitTime', totalWaitTime, actionStart)
+
     return result
 
 @timed
-def viewComponentDetails(user, componentName):
+def viewComponentDetails(user, pushActionStat, componentName):
     result = ActionResult(whoami())
     componentRows = _getComponentRows(user)
     totalWorkTime = 0
+
+    actionStart = time.time()
 
     start = time.time()
     foundComp = False
@@ -183,6 +201,8 @@ def viewComponentDetails(user, componentName):
     user.think(4)
 
     result.putStat("waitTime", totalWorkTime)
+    pushActionStat(whoami(), 'waitTime', totalWaitTime, actionStart)
+
     return result
 
 def getComponentNames(user):

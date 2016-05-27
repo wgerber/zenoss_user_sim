@@ -10,10 +10,12 @@ locator = {"loginField": "#username",
 @timed
 @assertPageAfter('title', 'Zenoss: Dashboard')
 @screenshot
-def login(user, url, username, password):
+def login(user, pushActionStat, url, username, password):
     result = ActionResult('login')
 
     waitTime = 0
+
+    actionStart = time.time()
     start = time.time()
     try:
         # TODO - enforce a timeout on this
@@ -53,4 +55,6 @@ def login(user, url, username, password):
 
     result.putStat("waitTime", waitTime)
 
+    waitTime = time.time() - actionStart
+    pushActionStat(whoami(), 'waitTime', waitTime, actionStart)
     return result

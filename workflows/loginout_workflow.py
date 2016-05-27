@@ -4,12 +4,12 @@ from pages import LoginPage, NavigationPage
 
 class Login(Workflow):
     @timed
-    def run(self, user):
+    def run(self, user, pushActionStat):
         result = WorkflowResult(self.name)
 
         takeAction(
             result, LoginPage.login,
-            user, user.url, user.username, user.password)
+            user, pushActionStat, user.url, user.username, user.password)
         if not result.success:
             return result
 
@@ -19,13 +19,13 @@ class Login(Workflow):
 
 class Logout(Workflow):
     @timed
-    def run(self, user):
+    def run(self, user, pushActionStat):
         result = WorkflowResult(self.name)
 
         if not user.loggedIn:
             result.fail("user is not logged in")
             return result
-        takeAction(result, NavigationPage.logout, user)
+        takeAction(result, NavigationPage.logout, user, pushActionStat)
         if not result.success:
             return result
 
@@ -41,13 +41,13 @@ class LoginAndLogout(Workflow):
         start = time.time()
         takeAction(
             result, LoginPage.login,
-            user, user.url, user.username, user.password)
+            user, pushActionStat, user.url, user.username, user.password)
         if not result.success:
             return result
 
         user.think(1)
 
-        takeAction(result, NavigationPage.logout)
+        takeAction(result, NavigationPage.logout, user, pushActionStat)
         if not result.success:
             return result
 
