@@ -1,4 +1,5 @@
 import time, os
+import requests, json
 
 from collections import defaultdict
 from selenium import webdriver
@@ -13,7 +14,7 @@ ADVANCED = 0.5
 GODLIKE = 0
 
 class User(object):
-    def __init__(self, name, url, username, password, skill=INTERMEDIATE, logDir="", chromedriver=None, workHour=0):
+    def __init__(self, name, url, username, password, skill=INTERMEDIATE, logDir="", chromedriver=None, workHour=0, tsdbQueue = None):
         self.name = name
         self.url = url
         self.username = username
@@ -32,6 +33,7 @@ class User(object):
         self.workHour = workHour
         self.thinkTime = 0
         self.workflowsComplete = 0
+        self.tsdbQueue = tsdbQueue
 
     def work(self):
         self.log("beginning work")
@@ -52,6 +54,8 @@ class User(object):
                 self.workflowsComplete += 1
                 elapsedTime = result.stat[workflow.name + ".elapsedTime"]
                 waitTime = result.stat[workflow.name + ".waitTime"]
+
+                self.postStat(result.stat)
 
                 if not result.success:
                     self.log(
@@ -110,3 +114,11 @@ class User(object):
         filename = self.logDir + "/%s-%s-screen.png" % (self.name, name)
         self.driver.save_screenshot(filename)
         return filename
+
+    def postStat(self, stat):
+        if self.tsdbQueue:
+            data = []
+            for k, v in stat.iteritems():
+                data.append({'timestamp': time.time(), 'metric': k, 'value': v, 'tags': {'user': self.name}})
+            self.tsdbQueue.put(data)
+
