@@ -9,7 +9,7 @@ from user import *
 
 HOUR_TO_SEC = 3600
 # frequency to check on users, spin up new users, etc
-USER_MONITOR_INTERVAL = 500
+USER_MONITOR_INTERVAL = 0.5
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Spin up some simulated users")

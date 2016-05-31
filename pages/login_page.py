@@ -27,8 +27,9 @@ def login(user, pushActionStat, url, username, password):
         login_field = find(user.driver, locator["loginField"])
         pass_field = find(user.driver, locator["passField"])
         submit_btn = find(user.driver, locator["submitBtn"])
-    except:
-        raise PageActionException(whoami(), "unexpected failure in login" % url,
+    except Exception as e:
+        raise PageActionException(whoami(),
+                "unexpected failure logging in to %s: %s" % (url, e.msg),
                 screen=e.screen)
     waitTime += time.time() - start
 
@@ -39,8 +40,9 @@ def login(user, pushActionStat, url, username, password):
         pass_field.send_keys(password)
         user.think(1)
         submit_btn.click()
-    except:
-        raise PageActionException(whoami(), "unexpected failure in login" % url,
+    except Exception as e:
+        raise PageActionException(whoami(),
+                "unexpected failure in logging in to %s: %s" % (url, e.msg),
                 screen=e.screen)
     waitTime += time.time() - start
 

@@ -15,7 +15,7 @@ def goToEventConsole(user, pushActionStat):
         find(user.driver, locator['events']).click()
     except Exception as e:
         raise PageActionException(whoami(),
-                "unexpected failure navigating to event console",
+                "unexpected failure navigating to event console: %s" % e.msg,
                 screen=e.screen)
     # TODO - make sure page is loaded/ready
     waitTime = time.time() - start
@@ -29,7 +29,7 @@ def goToDashboard(user, pushActionStat):
         find(user.driver, locator['dashboardLink']).click()
     except Exception as e:
         raise PageActionException(whoami(),
-                "unexpected failure navigating to dashboard",
+                "unexpected failure navigating to dashboard: %s" % e.msg,
                 screen=e.screen)
 
     DashboardPage.checkPageLoaded(user, pushActionStat)
@@ -43,9 +43,9 @@ def goToDevicesPage(user, pushActionStat):
     start = time.time()
     try:
         find(user.driver, locator['infrastructure']).click()
-    except:
+    except Exception as e:
         raise PageActionException(whoami(),
-                "unexpected failure navigating to device page",
+                "unexpected failure navigating to device page: %s" % e.msg,
                 screen=e.screen)
     # TODO - make sure page is loaded/ready
     waitTime = time.time() - start
@@ -57,9 +57,9 @@ def logout(user, pushActionStat):
     start = time.time()
     try:
         find(user.driver, locator['logoutLink']).click()
-    except:
+    except Exception as e:
         raise PageActionException(whoami(),
-                "unexpected failure during logout",
+                "unexpected failure during logout: %s" % e.msg,
                 screen=e.screen)
     # TODO - make sure page is loaded/ready
     waitTime = time.time() - start

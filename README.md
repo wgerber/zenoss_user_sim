@@ -51,6 +51,15 @@ Note that the concept of the web browser is entirely encapsulated in page action
 
 ## Some Notes
 **Pages**
+Pages and page actions are the nitty gritty of selenium and the DOM. Selenium and DOM related stuff should not escape outside of pages.
+
 * Inside of pages, use the `find`, `findMany`, `wait` and similar helper functions instead of directly calling selenium methods. Maintaining page actions when the framework changes will be much simpler.
 * Write page actions in a way that does not indicate that they do browser-y stuff. Bad page action: `clickAcknowledgeButton`. Good page action `acknowledgeEvent`.
 * A page action should not return until it is sure the page is ready. Find some DOM element or something to look for to ensure the page is actually ready and not merely loaded
+* When returning results from a page action, a) it must not be selenium objects and b) make sure the result contains something that can be re-queried from the DOM
+* Be sure to catch any selenium exceptions and return `PageActionException` instead.
+
+**Workflows**
+Workflows outline the pages actions to perform to complete a task. Workflows should know nothing of the DOM or selenium.
+
+* Workflows were designed to be "smart". Use page actions that result results (like a list of events) and make intelligent decisions on how to interact with them.

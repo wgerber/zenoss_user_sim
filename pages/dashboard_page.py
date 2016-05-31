@@ -10,9 +10,9 @@ def checkPageLoaded(user, pushActionStat):
     start = time.time()
     try:
         find(user.driver, locator["appPortal"])
-    except:
+    except Exception as e:
         raise PageActionException(whoami(),
-                "could not find appPortal element",
+                "could not find appPortal element: %s" % e.msg,
                 screen=e.screen)
     waitTime = time.time() - start
     pushActionStat(whoami(), 'waitTime', waitTime, start)

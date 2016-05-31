@@ -45,24 +45,30 @@ class User(object):
             workflow.run(self, pushActionStat)
             success = True
         except WorkflowException as e:
-            self.log("workflow failed: %s %s" % (workflow.name, e.message),
+            self.log("workflow failed: %s %s" % (workflow.name, str(e)),
                     severity="ERROR")
             self.log(traceback.format_exc(sys.exc_info()[2]), severity="ERROR")
             self.workflowsFailed += 1
             # TODO - save e.screen
         except PageActionException as e:
-            self.log("workflow failed: %s:%s %s" % (workflow.name, e.actionName, e.message),
+            self.log("workflow failed: %s:%s %s" % (workflow.name, e.actionName, str(e)),
+                    severity="ERROR")
+            self.log(traceback.format_exc(sys.exc_info()[2]), severity="ERROR")
+            self.workflowsFailed += 1
+            # TODO - save e.screen
+        except WebDriverException as e:
+            self.log("workflow %s failed with uncaught WebDriverException: %s" % (workflow.name, str(e)),
                     severity="ERROR")
             self.log(traceback.format_exc(sys.exc_info()[2]), severity="ERROR")
             self.workflowsFailed += 1
             # TODO - save e.screen
         except KeyboardInterrupt:
-            self.log("workflow failed: %s:%s %s" % (workflow.name, e.actionName, "cancelled due to KeyboardInterrupt"),
+            self.log("workflow %s failed due to KeyboardInterrupt" % workflow.name,
                     severity="ERROR")
             self.workflowsFailed += 1
             raise
         except Exception as e:
-            self.log("unexpected exception raised during workflow run, continuing",
+            self.log("workflow %s failed with uncaught error: %s" % (workflow.name, str(e)),
                     severity="ERROR")
             self.log(traceback.format_exc(sys.exc_info()[2]), severity="ERROR")
             self.workflowsFailed += 1

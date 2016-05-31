@@ -43,7 +43,7 @@ def filterBySeverity(user, pushActionStat, severity):
         find(user.driver, elements["severityBtn"]).click()
     except Exception as e:
         raise PageActionException(whoami(),
-                "could not find severity button",
+                "could not find severity button: %s" % e.msg,
                 screen=e.screen)
 
     # NOTE - assumes just one x-menu is visible
