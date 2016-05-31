@@ -1,10 +1,10 @@
-import time, os
-import requests, json
+import time, os, sys
+import requests, json, traceback
 
 from collections import defaultdict
 from selenium import webdriver
 
-from common import Workflow, colorizeString, getPushActionStat
+from common import *
 
 # skill levels determine how long it takes
 # for users to perform tasks
@@ -35,15 +35,50 @@ class User(object):
         self.duration = duration
         self.thinkTime = 0
         self.workflowsComplete = 0
+        self.workflowsFailed = 0
         self.tsdbQueue = tsdbQueue
 
+    # perform a workflow and handle any exceptions it may raise
+    def executeWorkflow(self, workflow, pushActionStat):
+        success = False
+        try:
+            workflow.run(self, pushActionStat)
+            success = True
+        except WorkflowException as e:
+            self.log("workflow failed: %s %s" % (workflow.name, e.message),
+                    severity="ERROR")
+            self.log(traceback.format_exc(sys.exc_info()[2]), severity="ERROR")
+            self.workflowsFailed += 1
+            # TODO - save e.screen
+        except PageActionException as e:
+            self.log("workflow failed: %s:%s %s" % (workflow.name, e.actionName, e.message),
+                    severity="ERROR")
+            self.log(traceback.format_exc(sys.exc_info()[2]), severity="ERROR")
+            self.workflowsFailed += 1
+            # TODO - save e.screen
+        except KeyboardInterrupt:
+            self.log("workflow failed: %s:%s %s" % (workflow.name, e.actionName, "cancelled due to KeyboardInterrupt"),
+                    severity="ERROR")
+            self.workflowsFailed += 1
+            raise
+        except Exception as e:
+            self.log("unexpected exception raised during workflow run, continuing",
+                    severity="ERROR")
+            self.log(traceback.format_exc(sys.exc_info()[2]), severity="ERROR")
+            self.workflowsFailed += 1
+        return success
+
     def work(self):
+        # TODO - handle log in/out here, dont include in workflow
         login = self.workflows[0] # Assume the first workflow is always Login.
         logout = self.workflows[-1] # Assume the last workflow is always Logout.
 
         pushActionStat = getPushActionStat(self.tsdbQueue, self.name, login.name)
-        login.run(self, pushActionStat)
-        assert self.loggedIn, 'Login failed'
+        if not self.executeWorkflow(login, pushActionStat):
+            # TODO - handle more gracefully
+            self.log("could not log in", severity="ERROR")
+            raise Exception("could not log in")
+
         start = time.time()
         HOUR_TO_SEC = 3600
         atWork = True
@@ -53,21 +88,16 @@ class User(object):
 		self.log("I've worked for %is of my total %is" % (time.time() - start, self.duration))
                 self.log("beginning workflow %s" % workflow.name)
                 pushActionStat = getPushActionStat(self.tsdbQueue, self.name, workflow.name)
-                result = workflow.run(self, pushActionStat)
-                self.results.append(result)
-                self.workflowsComplete += 1
-                elapsedTime = result.stat[workflow.name + ".elapsedTime"]
-                waitTime = result.stat[workflow.name + ".waitTime"]
 
-                # self.postStat(result.stat)
+                # perform workflow and handle exceptions
+                # TODO - catch uncaught exceptions and gracefully
+                # exit with the final "completed" report
+                if self.executeWorkflow(workflow, pushActionStat):
+                    self.log(
+                        "workflow %s(#%i) successful"
+                        % (workflow.name, self.workflowsComplete))
 
-                if not result.success:
-                    self.log(
-                        'workflow {} failed'.format(workflow.name, self.name), severity="ERROR")
-                else:
-                    self.log(
-			"workflow %s(#%i) successful (think: %is, wait: %is, elapsed: %is)"
-                        % (workflow.name, self.workflowsComplete, self.thinkTime, waitTime, elapsedTime))
+                    self.workflowsComplete += 1
 
                 # take a reddit break
                 time.sleep(REDDIT_TIME)
@@ -80,19 +110,13 @@ class User(object):
                     break
 
         pushActionStat = getPushActionStat(self.tsdbQueue, self.name, logout.name)
-        logout.run(self, pushActionStat)
+        if not self.executeWorkflow(logout, pushActionStat):
+            # TODO - handle more gracefully
+            self.log("could not log out", severity="ERROR")
+            raise Exception("could not log out")
 
-        assert not self.loggedIn, 'Logout failed'
-        totalTime = 0
-        waitTime = 0
-        # TODO - dont bother with stats at all
-        try:
-            totalTime = reduce(lambda acc,w: w.stat[w.name + ".elapsedTime"] + acc, self.results, 0)
-            waitTime = reduce(lambda acc,w: w.stat[w.name + ".waitTime"] + acc, self.results, 0)
-        except:
-            pass
-        self.log("all workflows (%i) complete (think: %is, wait: %is, elapsed: %is)" %\
-                (self.workflowsComplete, self.thinkTime, waitTime, totalTime), severity="HAPPY")
+        self.log("completed %i workflows, failed %i workflows over %is" % (self.workflowsComplete, self.workflowsFailed, time.time() - start),
+                severity="HAPPY")
 
     def quit(self):
         if not self.hasQuit:

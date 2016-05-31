@@ -1,6 +1,5 @@
 import login_page as LoginPage
 import dashboard_page as DashboardPage
 import device_details_page as DeviceDetailsPage
-import devices_page as DevicesPage
 import event_console_page as EventConsolePage
 import navigation_page as NavigationPage

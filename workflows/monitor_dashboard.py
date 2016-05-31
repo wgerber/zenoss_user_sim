@@ -2,22 +2,11 @@ from common import *
 from pages import LoginPage, DashboardPage, NavigationPage
 
 class MonitorDashboard(Workflow):
-    @timed
-    @screenshot
     def run(self, user, pushActionStat):
-        result = WorkflowResult(self.name)
-        do = doer(result, user)
-
         if not user.loggedIn:
-            result.fail("user is not logged in")
-            return result
+            raise WorkflowException(whoami(), "user is not logged in")
 
-        if not do(NavigationPage.goToDashboard, (pushActionStat,)):
-            return result
+        NavigationPage.goToDashboard(user, pushActionStat);
 
         # stare at the screen REAL hard
         user.think(8)
-
-        # TODO - refresh
-
-        return result

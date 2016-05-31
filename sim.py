@@ -8,6 +8,8 @@ from workflows import MonitorEvents, LogInOutWorkflow, MonitorDashboard, Investi
 from user import *
 
 HOUR_TO_SEC = 3600
+# frequency to check on users, spin up new users, etc
+USER_MONITOR_INTERVAL = 500
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Spin up some simulated users")
@@ -84,16 +86,12 @@ def startUser(name, url, username, password, headless, logDir, chromedriver,
 
     try:
         user.work()
-    except:
+    except KeyboardInterrupt:
+        pass
+    except Exception:
         user.log("%s raised an uncaught exception" % user.name, severity="ERROR")
         traceback.print_exc()
     finally:
-        #log results
-        resultsStr = ""
-        for result in user.results:
-            resultsStr += str(result)
-            resultsStr += ","
-        user.log(resultsStr, toConsole=False)
         print "cleaning up %s" % user.name
         user.quit()
         if headless:
@@ -145,20 +143,21 @@ if __name__ == '__main__':
 
         startTime = time.time()
         processes = []
-        died = 0
+        done = 0
         userCount = 0
         shouldWork = True
 
         # if its worktime or there are any processes
         # left working, do work!
         while len(processes) or shouldWork:
-            # check for users that died
+            # check for users that have stopped
+            # TODO - distinguish failed from completed
             toRemove = []
             for p in processes:
                 if not p.is_alive():
                     toRemove.append(p)
-                    died += 1
-                    print colorizeString("%i users died so far, %i currently running" % (died, len(processes)), "DEBUG")
+                    done += 1
+                    print colorizeString("%i users done so far, %i currently running" % (done, len(processes)), "DEBUG")
 
             # remove any dead users
             for p in toRemove:
@@ -187,6 +186,8 @@ if __name__ == '__main__':
             if remainingWorkTime < 0 and shouldWork:
                 shouldWork = False
                 print colorizeString("%s - it's quitting time yall. finish what youre doing" % time.asctime(), "DEBUG")
+
+            time.sleep(USER_MONITOR_INTERVAL)
 
     except:
         traceback.print_exc()

@@ -22,9 +22,9 @@ class assertPage(object):
                 actual = args[0].driver.title
             elif self.attr == 'url':
                 actual = args[0].driver.current_url
-            assert self.expected in actual, \
-                '{}() is called on the wrong page, {}.'.format(
-                    f.__name__, self.expected)
+            if not self.expected in actual:
+                raise PageActionException(whoami(),
+                        '{}() is called on the wrong page, {}.'.format(f.__name__, self.expected))
             return f(*args, **kwargs)
 
         return wrapper
@@ -37,52 +37,15 @@ class assertPageAfter(object):
     def __call__(self, f):
         @wraps(f)
         def wrapper(*args, **kwargs):
-            result = f(*args, **kwargs)
+            f(*args, **kwargs)
             if self.attr == 'title':
                 actual = args[0].driver.title
             elif self.attr == 'url':
                 actual = args[0].driver.current_url
-            assert self.expected in actual, \
-                'Called {}() and expected page "{}", but found page "{}".'.format(
-                    f.__name__, self.expected, actual)
-            return result
+            if not self.expected in actual:
+                raise PageActionException(whoami(),
+                        'Called {}() and expected page "{}", but found page "{}".'.format(f.__name__, self.expected, actual))
         return wrapper
-
-def timed(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        start = time.time()
-        result = f(*args, **kwargs)
-        if result.success:
-            elapsedTime = time.time() - start
-        else:
-            elapsedTime = None
-        result.putStat('elapsedTime', elapsedTime)
-        return result
-    return wrapper
-
-def screenshot(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        # NOTE - assumes user is first or second arg
-        user = None
-        if hasattr(args[0], "screenshot"):
-            user = args[0]
-        elif hasattr(args[1], "screenshot"):
-            user = args[1]
-        try:
-            result = f(*args, **kwargs)
-        except:
-            if user:
-                screen = user.screenshot(f.__name__)
-                user.log("screenshot saved as %s" % screen)
-            raise
-        if not result.success:
-            if user:
-                screen = user.screenshot(f.__name__)
-                user.log("screenshot saved as %s" % screen)
-        return result
-    return wrapper
 
 class retry(object):
     def __init__(self, maxAttempts=1):
@@ -92,14 +55,16 @@ class retry(object):
     def __call__(self, f):
         @wraps(f)
         def wrapper(*args, **kwargs):
-            result = f(*args, **kwargs)
-            while not result.success and self.attempts < self.maxAttempts:
-                print "retrying due to %s" % result.error
-                self.attempts += 1
-                result = f(*args, **kwargs)
-            if self.attempts >= self.maxAttempts:
-                print "gave up retrying"
-            return result
+            try:
+                f(*args, **kwargs)
+            except (WorkflowException, PageActionException) as e:
+                if self.attempts < self.maxAttempts:
+                    print "retrying due to %s" % e.message
+                    self.attempts += 1
+                    wrapper(*args, **kwargs)
+                else:
+                    print "gave up retrying"
+                    raise
         return wrapper
 
 def find(d, selector, timeout = DEFAULT_TIMEOUT):
@@ -127,56 +92,6 @@ class Workflow(object):
     def __init__(self, **kwargs):
         self.name = self.__class__.__name__
 
-class Result(object):
-    def __init__(self, name):
-        self.name = name
-        self.success = True
-        self.stat = {}
-        self.error = ""
-
-    def __str__(self):
-        return pprint.pformat(self.__dict__, indent=4)
-
-    def putStat(self, k, v):
-        k = '.'.join([self.name, k])
-        self.stat[k] = v
-
-    def fail(self, error):
-        self.success = False
-        self.error = error
-
-class ActionResult(Result):
-    def __init__(self, name):
-        Result.__init__(self, name)
-        self.data = {}
-
-    def putData(self, k, v):
-        k = '.'.join([self.name, k])
-        self.data[k] = v
-
-class WorkflowResult(Result):
-    def __init__(self, name):
-        Result.__init__(self, name)
-        self.failedAction = None
-
-    def addActionResult(self, result):
-        if not result.success:
-            self.failedAction = result.name
-            # fail this workflow with the error
-            # of the failing action result
-            self.fail(result.error)
-        self.success *= result.success
-        for k, v in result.stat.iteritems():
-            k = '.'.join([self.name, k])
-            self.stat[k] = v
-
-# performs an action and automatically applies its
-# results to the provided workflowResult
-def takeAction(result, actionFn, user, *actionArgs):
-    actionResult = actionFn(user, *actionArgs)
-    result.addActionResult(actionResult)
-    return actionResult
-
 def pushStat(queue, user, workflow, action, key, value, timestamp):
     if queue:
         tags = {'user': user, 'workflow': workflow, 'action': action}
@@ -186,32 +101,6 @@ def pushStat(queue, user, workflow, action, key, value, timestamp):
 def getPushActionStat(queue, user, workflow):
     def fn(action, key, value, timestamp):
         pushStat(queue, user, workflow, action, key, value, timestamp)
-    return fn
-
-def doer(result, user):
-    def fn(actionFn, args):
-        # perform action
-        severity = "INFO"
-        actionResult = takeAction(result, actionFn, user, *args)
-
-        # put action result waitTime on workflow result
-        waitTime = actionResult.stat.get("%s.waitTime" % actionFn.__name__, None)
-        if not "%s.waitTime" % result.name in result.stat:
-            result.stat["%s.waitTime" % result.name] = 0
-        result.stat["%s.waitTime" % result.name] += waitTime or 0
-
-        if not result.success:
-            actionResultStr = "failed to perform"
-            actionName = actionFn.__name__
-            elapsedTime = actionResult.stat.get("%s.elapsedTime" % actionFn.__name__, None)
-            elapsed = "(total %is)" % elapsedTime if elapsedTime is not None else ""
-            work = "(work %is)" % waitTime if waitTime is not None else ""
-            message = "%s %s %s %s" % (actionResultStr, actionName, elapsed, work)
-            if actionResult.error:
-                message += "error: '%s'" % actionResult.error
-            user.log(message, severity="ERROR")
-
-        return actionResult.success
     return fn
 
 def colorizeString(s, severity):
@@ -231,3 +120,25 @@ def colorizeString(s, severity):
         return s
     else:
         return COLOR_SEQ % (30 + COLORS[severity]) + s + RESET_SEQ
+
+class PageActionException(Exception):
+    def __init__(self, actionName, message, screen=None):
+        self.message = message
+        self.screen = screen
+        self.actionName = actionName
+
+    def __str__(self):
+        return "%s: %s" % (self.actionName, self.message)
+
+class WorkflowException(Exception):
+    def __init__(self, workflowName, message, actionName=None, screen=None):
+        self.message = message
+        self.screen = screen
+        self.actionName = actionName
+        self.workflowName = workflowName
+
+    def __str__(self):
+        if self.actionName:
+            return "%s:%s %s" % (self.workflowName, self.actionName, self.message)
+        else:
+            return "%s: %s" % (self.workflowName, self.message)

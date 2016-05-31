@@ -7,12 +7,8 @@ locator = {"loginField": "#username",
             "passField": "#passwrd",
             "submitBtn": "#loginButton"}
 
-@timed
 @assertPageAfter('title', 'Zenoss: Dashboard')
-@screenshot
 def login(user, pushActionStat, url, username, password):
-    result = ActionResult('login')
-
     waitTime = 0
 
     actionStart = time.time()
@@ -20,11 +16,10 @@ def login(user, pushActionStat, url, username, password):
     try:
         # TODO - enforce a timeout on this
         user.driver.get(url)
-    except:
-        # TODO - get details from exception
-        result.fail("could not navigate to %s" % url)
-        traceback.print_exc()
-        return result
+    except Exception as e:
+        raise PageActionException(whoami(),
+                "could not navigate to %s because %s" % (url, e.msg),
+                screen=e.screen)
     waitTime += time.time() - start
 
     start = time.time()
@@ -33,10 +28,8 @@ def login(user, pushActionStat, url, username, password):
         pass_field = find(user.driver, locator["passField"])
         submit_btn = find(user.driver, locator["submitBtn"])
     except:
-        # TODO - get details from exception
-        result.fail("unexpected failure in login")
-        traceback.print_exc()
-        return result
+        raise PageActionException(whoami(), "unexpected failure in login" % url,
+                screen=e.screen)
     waitTime += time.time() - start
 
     start = time.time()
@@ -47,14 +40,9 @@ def login(user, pushActionStat, url, username, password):
         user.think(1)
         submit_btn.click()
     except:
-        # TODO - get details from exception
-        result.fail("unexpected failure in login")
-        traceback.print_exc()
-        return result
+        raise PageActionException(whoami(), "unexpected failure in login" % url,
+                screen=e.screen)
     waitTime += time.time() - start
-
-    result.putStat("waitTime", waitTime)
 
     waitTime = time.time() - actionStart
     pushActionStat(whoami(), 'waitTime', waitTime, actionStart)
-    return result
