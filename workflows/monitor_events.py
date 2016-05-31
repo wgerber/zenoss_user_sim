@@ -3,22 +3,13 @@ from common import *
 from pages import LoginPage, EventConsolePage, NavigationPage
 
 class MonitorEvents(Workflow):
-    @timed
-    @screenshot
     def run(self, user, pushActionStat):
-        result = WorkflowResult(self.name)
-        do = doer(result, user)
-
         if not user.loggedIn:
-            result.fail("user is not logged in")
-            return result
+            raise WorkflowException(whoami(), "user is not logged in")
 
-        if not do(NavigationPage.goToEventConsole, (pushActionStat,)):
-            return result
-        if not do(EventConsolePage.filterBySeverity, (pushActionStat, "critical",)):
-            return result
-        if not do(EventConsolePage.sortByLastSeen, (pushActionStat, "ascending",)):
-            return result
+        NavigationPage.goToEventConsole(user, pushActionStat)
+        EventConsolePage.filterBySeverity(user, pushActionStat, "critical")
+        EventConsolePage.sortByLastSeen(user, pushActionStat, "ascending")
 
         """
         # go to event console
@@ -55,5 +46,3 @@ class MonitorEvents(Workflow):
         user.think(8)
 
         # TODO - refresh/filter/sort
-
-        return result

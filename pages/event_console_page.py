@@ -30,12 +30,10 @@ elements = {"severityBtn": "#events_grid-filter-severity-btnEl",
             "eventRows": '#events_grid-body table:nth-of-type(1) .x-grid-row',
             }
 
-@timed
 @retry(MAX_RETRIES)
 @assertPage('title', TITLE)
 def filterBySeverity(user, pushActionStat, severity):
     time.sleep(3)
-    result = ActionResult(whoami())
     severities = ["critical", "error", "warning", "info", "debug", "clear"]
 
     actionStart = time.time()
@@ -43,9 +41,10 @@ def filterBySeverity(user, pushActionStat, severity):
     start = time.time()
     try:
         find(user.driver, elements["severityBtn"]).click()
-    except:
-        result.fail("could not find severity button")
-        return result
+    except Exception as e:
+        raise PageActionException(whoami(),
+                "could not find severity button: %s" % e.msg,
+                screen=e.screen)
 
     # NOTE - assumes just one x-menu is visible
     sevEls = findMany(user.driver, ".x-menu .x-menu-item")
@@ -73,20 +72,13 @@ def filterBySeverity(user, pushActionStat, severity):
         eventsTable = find(user.driver, elements["eventsTable"])
         wait(user.driver, EC.staleness_of(eventsTable))
 
-    result.putStat("waitTime", time.time() - start)
-
     waitTime = time.time() - actionStart
     pushActionStat(whoami(), 'waitTime', waitTime, actionStart)
-    return result
 
-@timed
 @assertPage('title', TITLE)
 def sortByLastSeen(user, pushActionStat, newSortDir):
-    result = ActionResult(whoami())
     newSortDir = "ASC" if newSortDir == "ascending" else "DESC"
     sortDir = None
-
-    actionStart = time.time()
 
     start = time.time()
 
@@ -104,17 +96,11 @@ def sortByLastSeen(user, pushActionStat, newSortDir):
         # wait until event table updates
         wait(user.driver, EC.staleness_of(eventsTable))
 
-    result.putStat("waitTime", time.time() - start)
-    waitTime = time.time() - actionStart
-    pushActionStat(whoami(), 'waitTime', waitTime, actionStart)
+    waitTime = time.time() - start
+    pushActionStat(whoami(), 'waitTime', waitTime, start)
 
-    return result
-
-@timed
 @assertPage('title', TITLE)
 def getEvents(user):
-    result = ActionResult('getEvents')
-
     actionStart = time.time()
     eventRows = []
     try:
@@ -125,8 +111,9 @@ def getEvents(user):
         # if body has style "cursor: wait", then extjs is loading
         # something, and this is an actual timeout
         if "wait" in find(user.driver, "body").get_attribute("style"):
-            result.fail("timed out waiting for event rows")
-            return result
+            raise PageActionException(whoami(),
+                    "timed out waiting for event rows",
+                    screen=user.driver.get_screenshot_as_png())
 
     events = []
     for el in eventRows:
@@ -147,8 +134,7 @@ def getEvents(user):
             event[colName] = val
         events.append(event)
 
-    result.putData('events', events)
     waitTime = time.time() - actionStart
     pushActionStat(whoami(), 'waitTime', waitTime, actionStart)
 
-    return result
+    return events

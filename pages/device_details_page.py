@@ -15,29 +15,27 @@ locator = {'navBtns': '#deviceDetailNav-body table .x-grid-row',
            "componentCardGraphs": "#component_card-body>.x-panel:last-of-type .europagraph",
            "componentCardEventTable": "#component_card-body #event_panel .x-grid-table"}
 
-@timed
 def checkPageReady(user, pushActionStat):
-    result = ActionResult(whoami())
     start = time.time()
     try:
         find(user.driver, locator["deviceDetailNav"])
-    except:
-        result.fail("could not find deviceDetailNav element")
+    except Exception as e:
+        raise PageActionException(whoami(),
+                "could not find deviceDetailNav element: %s" % e.msg,
+                screen=e.screen)
     waitTime = time.time() - start
     pushActionStat(whoami(), 'waitTime', waitTime, start)
-    return result
 
-@timed
 @retry(MAX_RETRIES)
 def viewDeviceGraphs(user, pushActionStat):
-    result = ActionResult(whoami())
-
+    start = time.time()
     rows = []
     try:
         rows = findMany(user.driver, locator["deviceDetailNavRows"])
-    except:
-        result.fail("could not find device detail nav rows")
-        return result
+    except Exception as e:
+        raise PageActionException(whoami(),
+                "could not find device detail nav rows: %s" % e.msg,
+                screen=e.screen)
 
     foundGraphs = False
     for row in rows:
@@ -45,31 +43,29 @@ def viewDeviceGraphs(user, pushActionStat):
             if row.text == "Graphs":
                 row.click()
                 foundGraphs = True
-                return result
-        except:
-            result.fail("couldnt click 'Graph' device nav row")
-            return result
+        except Exception as e:
+            raise PageActionException(whoami(),
+                    "could not click 'Graph' device nav row: %s" % e.msg,
+                    screen=e.screen)
 
     if not foundGraphs:
-        result.fail("could not find graphs nav link")
-        return result
+        raise PageActionException(whoami(),
+                "could not find graphs nav link",
+                screen=user.driver.get_screenshot_as_png())
 
     #wait till at least 1 graph loads
     try:
         find(user.driver, locator["europaGraph"])
-    except:
-        result.fail("could not find a single teeny tiny itty bitty graph. Not even one")
-        return result
+    except Exception as e:
+        raise PageActionException(whoami(),
+                "could not find a single teeny tiny itty bitty graph. Not even one.",
+                screen=user.driver.get_screenshot_as_png())
 
     waitTime = time.time() - start
     pushActionStat(whoami(), 'waitTime', waitTime, start)
 
-    return result
-
-@timed
 @retry(MAX_RETRIES)
 def interactWithDeviceGraphs(user, pushActionStat):
-    result = ActionResult(whoami())
     buttonEls = []
 
     totalWaitTime = 0
@@ -82,20 +78,23 @@ def interactWithDeviceGraphs(user, pushActionStat):
         # find graph controls
         try:
             buttonEls = findMany(user.driver, locator["deviceGraphControls"])
-        except:
-            result.fail("could not find device graph controls")
-            return result
+        except Exception as e:
+            raise PageActionException(whoami(),
+                    "could not find device graph controls: %s" % e.msg,
+                    screen=e.screen)
         # find the back button
         backButtonEl = [el for el in buttonEls if el.text == "<"][0]
         if not backButtonEl:
-            result.fail("could not find device graph back button")
-            return result
+            raise PageActionException(whoami(),
+                    "could not find device graph back button",
+                    screen=user.driver.get_screenshot_as_png())
         # pan back
         try:
             backButtonEl.click()
-        except:
-            result.fail("couldnt click back button el")
-            return result
+        except Exception as e:
+            raise PageActionException(whoami(),
+                    "could not click device graph back button: %s" % e.msg,
+                    screen=e.screen)
         # TODO - wait till graph updates
 
     totalWaitTime += time.time() - start
@@ -111,20 +110,23 @@ def interactWithDeviceGraphs(user, pushActionStat):
         # find graph controls
         try:
             buttonEls = findMany(user.driver, locator["deviceGraphControls"])
-        except:
-            result.fail("could not find device graph controls")
-            return result
+        except Exception as e:
+            raise PageActionException(whoami(),
+                    "could not find device graph controls: %s" % e.msg,
+                    screen=e.screen)
         # find the zoom out button
         zoomOutEl = [el for el in buttonEls if el.text == "Zoom Out"][0]
         if not zoomOutEl:
-            result.fail("could not find device graph zoom out button")
-            return result
+            raise PageActionException(whoami(),
+                    "could not find device graph zoom out button",
+                    screen=user.driver.get_screenshot_as_png())
         # zoom out
         try:
             zoomOutEl.click()
-        except:
-            result.fail("couldnt click zoomoutel")
-            return result
+        except Exception as e:
+            raise PageActionException(whoami(),
+                    "could not click device graph back button: %s" % e.msg,
+                    screen=e.screen)
         # TODO - wait till graph updates
 
     waitTime = time.time() - start
@@ -134,16 +136,10 @@ def interactWithDeviceGraphs(user, pushActionStat):
     # just take a minute. just stop and take a minute and think
     user.think(4)
 
-    result.putStat("waitTime", totalWaitTime)
-
     pushActionStat(whoami(), 'waitTime', totalWaitTime, actionStart)
 
-    return result
-
-@timed
 @retry(MAX_RETRIES)
 def viewComponentDetails(user, pushActionStat, componentName):
-    result = ActionResult(whoami())
     componentRows = _getComponentRows(user)
     totalWaitTime = 0
 
@@ -155,25 +151,26 @@ def viewComponentDetails(user, pushActionStat, componentName):
         if rowEl.text == componentName:
             try:
                 rowEl.click()
-            except:
-                result.fail("couldnt click component row el")
-                return result
+            except Exception as e:
+                raise PageActionException(whoami(),
+                        "couldnt click component row el: %s" % e.msg,
+                        screen=e.screen)
             foundComp = True
 
     if not foundComp:
-        result.fail("could not find component named %s" % componentName)
-        return result
+        raise PageActionException(whoami(),
+                "could not find component named %s" % componentName,
+                screen=user.driver.get_screenshot_as_png())
 
     # wait until component table rows have loaded
     try:
         findMany(user.driver, locator["componentCardTopPanelRows"])
-    except:
-        result.fail("no component rows found")
-        return result
+    except Exception as e:
+        raise PageActionException(whoami(),
+                "no component rows found: %s" % e.msg,
+                screen=e.screen)
 
-    if not _selectComponentSection(user, "Graphs"):
-        result.fail("could not view component graphs")
-        return result
+    _selectComponentSection(user, "Graphs")
 
     totalWaitTime += time.time() - start
 
@@ -183,25 +180,21 @@ def viewComponentDetails(user, pushActionStat, componentName):
 
     start = time.time()
 
-    if not _selectComponentSection(user, "Events"):
-        result.fail("could not view component events")
-        return result
+    _selectComponentSection(user, "Events")
 
     try:
         find(user.driver, locator["componentCardEventTable"])
-    except:
-        result.fail("could not find event table")
-        return result
+    except Exception as e:
+        raise PageActionException(whoami(),
+                "could not find event table: %s" % e.msg,
+                screen=e.screen)
 
     totalWaitTime += time.time() - start
 
     # TODO - ensure event table rows have loaded
     user.think(4)
 
-    result.putStat("waitTime", totalWaitTime)
     pushActionStat(whoami(), 'waitTime', totalWaitTime, actionStart)
-
-    return result
 
 def getComponentNames(user):
     # NOTE - the name includes the component count
@@ -211,9 +204,10 @@ def _getComponentRows(user):
     componentRows = []
     try:
         rows = findMany(user.driver, locator["deviceDetailNavRows"])
-    except:
-        result.fail("could not find device detail nav rows")
-        return result
+    except Exception as e:
+        raise PageActionException(whoami(),
+                "could not find device detail nav rows: %s" % e.msg,
+                screen=e.screen)
 
     # NOTE - assumes graphs comes immediately after components
     foundComps = False
@@ -227,19 +221,16 @@ def _getComponentRows(user):
             componentRows.append(row)
     return componentRows
 
-# TODO - adjust @retry decorator to work
-# with this function that doesnt return result instance
-def _selectComponentSection(user, sectionName, attempt=0):
-    if attempt >= MAX_RETRIES:
-        user.log("gave up looking for %s in details dropdown" % sectionName)
-        return False
+@retry(MAX_RETRIES)
+def _selectComponentSection(user, sectionName):
     dropdownListItems = []
     try:
         find(user.driver, locator["componentCardDisplayDropdown"]).click()
         dropdownListItems = findMany(user.driver, ".x-boundlist .x-boundlist-item")
-    except:
-        user.log("%s problem finding or clicking or something on attempt %i" % (user.name, attempt))
-        return _selectComponentSection(user, sectionName, attempt=attempt+1)
+    except Exception as e:
+        raise PageActionException(whoami(),
+                "could not find our click component 'display' dropdown: %s" % e.msg,
+                screen=user.driver.get_screenshot_as_png())
 
     try:
         for el in dropdownListItems:
@@ -247,10 +238,10 @@ def _selectComponentSection(user, sectionName, attempt=0):
                 el.click()
                 return True
     except StaleElementReferenceException:
-        # this seems ridiculous, but if we find stale
-        # elements, just uhh... try again :/
-        user.log("%s hit stale element while looking at dropdown on attempt %i" % (user.name, attempt))
-        return _selectComponentSection(user, sectionName, attempt=attempt+1)
+        raise PageActionException(whoami(),
+                "hit stale element while iterating dropdown",
+                screen=user.driver.get_screenshot_as_png())
 
-    user.log("%s didnt find '%s' in components display dropdown on attempt %i" % (user.name, sectionName, attempt))
-    return _selectComponentSection(user, sectionName, attempt=attempt+1)
+    raise PageActionException(whoami(),
+            "didn't find '%s' in components display dropdown" % sectionName,
+            screen=user.driver.get_screenshot_as_png())
