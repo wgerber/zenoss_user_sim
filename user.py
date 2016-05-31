@@ -1,5 +1,5 @@
 import time, os, sys
-import requests, json, traceback
+import json, traceback
 
 from collections import defaultdict
 from selenium import webdriver

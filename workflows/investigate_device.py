@@ -21,16 +21,12 @@ class InvestigateDevice(Workflow):
                                 (user.url, random.choice(deviceIds)))
 
         DeviceDetailsPage.checkPageReady(user, pushActionStat)
-
         DeviceDetailsPage.viewDeviceGraphs(user, pushActionStat)
-
         user.think(3)
-
         DeviceDetailsPage.interactWithDeviceGraphs(user, pushActionStat)
 
         # TODO - contribute to wait?
         componentNames = DeviceDetailsPage.getComponentNames(user)
-
         for name in componentNames:
             DeviceDetailsPage.viewComponentDetails(user, pushActionStat, name)
 
