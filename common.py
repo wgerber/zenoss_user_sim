@@ -142,3 +142,29 @@ class WorkflowException(Exception):
             return "%s:%s %s" % (self.workflowName, self.actionName, self.message)
         else:
             return "%s: %s" % (self.workflowName, self.message)
+
+class StopWatch(object):
+    def __init__(self):
+        self.times = []
+        self.lastTime = None
+        pass
+
+    def start(self):
+        self.lastTime = time.time()
+        return self
+
+    def stop(self):
+        if not self.lastTime:
+            return
+        self.times.append(time.time() - self.lastTime)
+        self.lastTime = None
+        return self
+
+    @property
+    def total(self):
+        curr = 0
+        # if a timer is in progress, grab the
+        # current value without stopping it
+        if self.lastTime:
+            curr = time.time() - self.lastTime
+        return reduce(lambda x,y: x+y, self.times, curr)
