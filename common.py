@@ -1,4 +1,4 @@
-import time, pprint, inspect
+import time, pprint, inspect, socket
 from functools import wraps
 
 from selenium import webdriver
@@ -94,7 +94,13 @@ class Workflow(object):
 
 def pushStat(queue, user, workflow, action, key, value, timestamp):
     if queue:
-        tags = {'user': user, 'workflow': workflow, 'action': action}
+        tags = {'host': socket.gethostname()}
+        for k, v in zip(
+                ['user', 'workflow', 'action'],
+                [user, workflow, action]):
+            if v:
+                tags[k] = v
+
         data = [{'timestamp': timestamp, 'metric': key, 'value': value, 'tags': tags}]
         queue.put(data)
 
