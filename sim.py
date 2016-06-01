@@ -10,12 +10,17 @@ import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
-from workflows import MonitorEvents, LogInOutWorkflow, MonitorDashboard, InvestigateDevice
+from workflows import *
 from user import *
 
 HOUR_TO_SEC = 3600
 # frequency to check on users, spin up new users, etc
 USER_MONITOR_INTERVAL = 0.5
+# frequency to being push to tsdb. note this is
+# the minimum value; it will be used after a push
+# has completed
+TSDB_PUSH_INTERVAL = 1
+TSDB_METRIC_BATCH_MAX = 30
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Spin up some simulated users")
@@ -110,25 +115,22 @@ def startUser(name, url, username, password, headless, logDir, chromedriver,
 def pushToTsdb(url, queue):
     data = []
     obj = None
-    while obj != 'STOP':
-        try:
-            # When the timeout is too long, some data get lost.
-            obj = queue.get(timeout=1)
+    try:
+        while queue.qsize() and len(data) < TSDB_METRIC_BATCH_MAX:
+            obj = queue.get()
             data += obj
-        except Queue.Empty:
-            headers={'Content-type': 'application/json', 'Accept': 'text/plain'}
-            if data:
-                print 'Posting {} data points to tsdb'.format(len(data))
-                print data
-                r = requests.post(
-                        url + "/api/put",
-                        data=json.dumps(data), headers=headers, verify=False)
-                if r.status_code != 204:
-                    print "Failed to post datapoints to tsdb"
-                    print r.status_code
-                else:
-                    print "Posted %i datapoints to tsdb" % len(data)
-            data = []
+    except Queue.Empty:
+        pass
+
+    headers={'Content-type': 'application/json', 'Accept': 'text/plain'}
+    if data:
+        r = requests.post(
+                url + "/api/put",
+                data=json.dumps(data), headers=headers, verify=False)
+        if r.status_code != 204:
+            print "Failed to post %i datapoints to tsdb: %i" % (len(data), r.status_code)
+        else:
+            print "Posted %i datapoints to tsdb, %i left in queue" % (len(data), queue.qsize())
 
 def countUser(tsdbUrl, startTime, endTime):
     headers={'Content-type': 'application/json', 'Accept': 'text/plain'}
@@ -177,15 +179,13 @@ if __name__ == '__main__':
                 args.users, args.url, args.username, "True" if args.headless else "False", args.workflows, args.duration, args.logDir)
 
         tsdbQueue = mp.Queue()
-        tsdbPusher = mp.Process(
-                target = pushToTsdb, args = (args.tsdbUrl, tsdbQueue,))
-        tsdbPusher.start()
 
         startTime = time.time()
         processes = []
         done = 0
         userCount = 0
         shouldWork = True
+        lastPush = time.time()
 
         # if its worktime or there are any processes
         # left working, do work!
@@ -247,12 +247,21 @@ if __name__ == '__main__':
                 shouldWork = False
                 print colorizeString("%s - it's quitting time yall. finish what youre doing" % time.asctime(), "DEBUG")
 
+            # push some stats?
+            now = time.time()
+            if now - lastPush > TSDB_PUSH_INTERVAL:
+                pushToTsdb(args.tsdbUrl, tsdbQueue)
+                lastPush = time.time()
+
             time.sleep(USER_MONITOR_INTERVAL)
     except:
         traceback.print_exc()
 
     finally:
-        tsdbQueue.put('STOP')
+        # drain stats queue
+        while tsdbQueue.qsize():
+            print "draining queue with size %i" % tsdbQueue.qsize()
+            pushToTsdb(args.tsdbUrl, tsdbQueue)
         tsdbQueue.close()
         tsdbQueue.join_thread()
         endTime = time.time()

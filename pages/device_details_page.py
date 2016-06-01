@@ -16,7 +16,7 @@ locator = {'navBtns': '#deviceDetailNav-body table .x-grid-row',
            "componentCardEventTable": "#component_card-body #event_panel .x-grid-table"}
 
 def checkPageReady(user, pushActionStat):
-    start = time.time()
+    start = ts()
     waitWatch = StopWatch().start()
     elapsedWatch = StopWatch().start()
     try:
@@ -25,12 +25,15 @@ def checkPageReady(user, pushActionStat):
         raise PageActionException(whoami(),
                 "could not find deviceDetailNav element: %s" % e.msg,
                 screen=e.screen)
+    end = ts()
     pushActionStat(whoami(), 'waitTime', waitWatch.total, start)
+    pushActionStat(whoami(), 'waitTime', waitWatch.total, end)
     pushActionStat(whoami(), 'elapsedTime', elapsedWatch.total, start)
+    pushActionStat(whoami(), 'elapsedTime', elapsedWatch.total, end)
 
 @retry(MAX_RETRIES)
 def viewDeviceGraphs(user, pushActionStat):
-    start = time.time()
+    start = ts()
     waitWatch = StopWatch().start()
     elapsedWatch = StopWatch().start()
     rows = []
@@ -65,15 +68,19 @@ def viewDeviceGraphs(user, pushActionStat):
                 "could not find a single teeny tiny itty bitty graph. Not even one.",
                 screen=user.driver.get_screenshot_as_png())
 
+    end = ts()
     pushActionStat(whoami(), 'waitTime', waitWatch.total, start)
+    pushActionStat(whoami(), 'waitTime', waitWatch.total, end)
     pushActionStat(whoami(), 'elapsedTime', elapsedWatch.total, start)
+    pushActionStat(whoami(), 'elapsedTime', elapsedWatch.total, end)
 
 @retry(MAX_RETRIES)
 def interactWithDeviceGraphs(user, pushActionStat):
     buttonEls = []
-    start = time.time()
+    start = ts()
     waitWatch = StopWatch().start()
     elapsedWatch = StopWatch().start()
+    thinkWatch = StopWatch()
 
     # pan back a few times
     for _ in xrange(4):
@@ -102,7 +109,9 @@ def interactWithDeviceGraphs(user, pushActionStat):
     waitWatch.stop()
 
     # contemplate life, the universe, and everything
+    thinkWatch.start()
     user.think(4)
+    thinkWatch.stop()
 
     waitWatch.start()
     # zoom out a few times
@@ -132,10 +141,17 @@ def interactWithDeviceGraphs(user, pushActionStat):
     waitWatch.stop()
 
     # just take a minute. just stop and take a minute and think
+    thinkWatch.start()
     user.think(4)
+    thinkWatch.stop()
 
+    end = ts()
     pushActionStat(whoami(), 'waitTime', waitWatch.total, start)
+    pushActionStat(whoami(), 'waitTime', waitWatch.total, end)
     pushActionStat(whoami(), 'elapsedTime', elapsedWatch.total, start)
+    pushActionStat(whoami(), 'elapsedTime', elapsedWatch.total, end)
+    pushActionStat(whoami(), 'thinkTime', thinkWatch.total, start)
+    pushActionStat(whoami(), 'thinkTime', thinkWatch.total, end)
 
 @retry(MAX_RETRIES)
 def viewComponentDetails(user, pushActionStat, componentName):
@@ -143,7 +159,8 @@ def viewComponentDetails(user, pushActionStat, componentName):
 
     waitWatch = StopWatch().start()
     elapsedWatch = StopWatch().start()
-    start = time.time()
+    thinkWatch = StopWatch()
+    start = ts()
 
     foundComp = False
     for rowEl in componentRows:
@@ -175,7 +192,9 @@ def viewComponentDetails(user, pushActionStat, componentName):
 
     # TODO - wait till graphs or "no data" message
     # TODO - interact with graphs
+    thinkWatch.start()
     user.think(4)
+    thinkWatch.stop()
 
     waitWatch.start()
     _selectComponentSection(user, "Events")
@@ -190,10 +209,17 @@ def viewComponentDetails(user, pushActionStat, componentName):
 
     waitWatch.stop()
     # TODO - ensure event table rows have loaded
+    thinkWatch.start()
     user.think(4)
+    thinkWatch.stop()
 
+    end = ts()
     pushActionStat(whoami(), 'waitTime', waitWatch.total, start)
+    pushActionStat(whoami(), 'waitTime', waitWatch.total, end)
     pushActionStat(whoami(), 'elapsedTime', elapsedWatch.total, start)
+    pushActionStat(whoami(), 'elapsedTime', elapsedWatch.total, end)
+    pushActionStat(whoami(), 'thinkTime', thinkWatch.total, start)
+    pushActionStat(whoami(), 'thinkTime', thinkWatch.total, end)
 
 def getComponentNames(user):
     # NOTE - the name includes the component count

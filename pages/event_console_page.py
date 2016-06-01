@@ -33,7 +33,6 @@ elements = {"severityBtn": "#events_grid-filter-severity-btnEl",
 @retry(MAX_RETRIES)
 @assertPage('title', TITLE)
 def filterBySeverity(user, pushActionStat, severity):
-    time.sleep(3)
     severities = ["critical", "error", "warning", "info", "debug", "clear"]
 
     actionStart = time.time()

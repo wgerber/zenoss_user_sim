@@ -1,6 +1,6 @@
 import traceback
 from common import *
-from pages import DashboardPage
+from pages import DashboardPage, InfrastructurePage
 
 locator = {'events': '#Events-nav-button',
            'infrastructure': '#Infrastructure-nav-button',
@@ -32,7 +32,7 @@ def goToDashboard(user, pushActionStat):
                 "unexpected failure navigating to dashboard: %s" % e.msg,
                 screen=e.screen)
 
-    DashboardPage.checkPageLoaded(user, pushActionStat)
+    DashboardPage.checkPageReady(user, pushActionStat)
 
     waitTime = time.time() - start
     pushActionStat(whoami(), 'waitTime', waitTime, start)
@@ -47,11 +47,12 @@ def goToDevicesPage(user, pushActionStat):
         raise PageActionException(whoami(),
                 "unexpected failure navigating to device page: %s" % e.msg,
                 screen=e.screen)
-    # TODO - make sure page is loaded/ready
+
+    InfrastructurePage.checkPageReady(user, pushActionStat)
+
     waitTime = time.time() - start
     pushActionStat(whoami(), 'waitTime', waitTime, start)
 
-@retry(3)
 @assertPageAfter('title', 'Login')
 def logout(user, pushActionStat):
     start = time.time()

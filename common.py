@@ -88,6 +88,9 @@ def wait(d, fn, time=DEFAULT_TIMEOUT):
 def whoami():
     return inspect.stack()[1][3]
 
+def ts():
+    return time.time()
+
 class Workflow(object):
     def __init__(self, **kwargs):
         self.name = self.__class__.__name__
@@ -147,7 +150,6 @@ class StopWatch(object):
     def __init__(self):
         self.times = []
         self.lastTime = None
-        pass
 
     def start(self):
         self.lastTime = time.time()
@@ -168,3 +170,24 @@ class StopWatch(object):
         if self.lastTime:
             curr = time.time() - self.lastTime
         return reduce(lambda x,y: x+y, self.times, curr)
+
+class StatRecorder(object):
+    def __init__(self, pushFn, name, metric):
+        self.pushFn = pushFn
+        self.name = name
+        self.metric = metric
+        self.startTime = None
+
+    def start(self):
+        self.startTime = time.time()
+
+    def stop(self):
+        if not self.lastTime:
+            return
+        end = ts()
+        self._pushStat(self.startTime - end, self.startTime, end)
+        self.startTime = None
+
+    def _pushStat(self, total, start, end):
+        self.pushFn(self.name, self.metric, total, start)
+        self.pushFn(self.name, self.metric, total, end)
