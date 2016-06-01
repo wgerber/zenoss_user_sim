@@ -15,33 +15,38 @@ Once the build is complete, the image can be launched and command line arguments
         zenoss/usersim:v1 \
         -u https://zenoss5.graveyard.zenoss.loc \
         -n zenny \
-        -p ****** \
-        -c 10 \
+        -p **** \
+        -c 25 \
+        --duration 900 \
         --log-dir ./log \
-        --workflows 'MonitorDashboard, InvestigateDevice, MonitorEvent, InvestigateDevice'
+        --tsdb-url https://opentsdb.graveyard \
+        --workflows="MonitorEvents, InvestigateDevice, MonitorDashboard, InvestigateDevice, MonitorDevices" \
+        --leader
 
 Note that this image must be run as `privileged` and `/dev/shm` must be bindmounted for chrome to work properly. Mounting `/etc/hosts` into the image is useful because the Zenoss instance may only be reachable by hostname
 
 To run directly in python, install dependencies (`Xvfb` and `chromedriver` for the OS, and `selenium` and `xvfbwrapper` for python), then kick it off with:
 
-    python sim.py \
+    python -u sim.py \
         -u https://zenoss5.graveyard.zenoss.loc \
         -n zenny \
-        -p ****** \
-        -c 10 \
-        --log-dir /tmp/ \
-        --workflows 'MonitorDashboard, InvestigateDevice, MonitorEvent, InvestigateDevice'
+        -p **** \
+        -c 25 \
+        --duration 900 \
+        --headless \
+        --log-dir $(pwd)/log \
+        --tsdb-url https://opentsdb.graveyard \
+        --workflows="MonitorEvents, InvestigateDevice, MonitorDashboard, InvestigateDevice, MonitorDevices" \
+        --leader
 
 For configuration options, try `python sim.py --help` or `docker run zenoss/usersim:v1`.
 
 ## Tell me more!
-Zenoss User Simulator is similar to a functional test runner, but aims to perform specific tasks and workflows at a more general level rather than verify that specific details behave in an expected way. A **User** is given a list of **Workflows** to perform. Each Workflow interacts with one or more **Pages**. Pages know precisely how to accomplish a task, and return **Results** indicating, among other details, if the task was successful or not.
+Zenoss User Simulator is similar to a functional test runner, but aims to perform specific tasks and workflows at a more general level rather than verify that specific details behave in an expected way. A **User** is given a list of **Workflows** to perform. Each Workflow interacts with one or more **Pages**. Pages know precisely how to accomplish a task, and push results to opentsdb.
 
 For example, a user workflow may be to review all critical events that occurred overnight. The workflow tasks could be: view events, filter to show only critical severity, sort by last seen, look at results.
 
 Viewing the events is a page action that breaks down to navigating to the events page. This is part of the NavigationPage (an unusual page in that it is always present). The workflow doesn't need to know the details of how to view events, just that it can tell the navigation page to take us there.
-
-Once the page action has completed, a result is returned. The result encapsulates success, stats and an optional error message. It is up to the workflow to decide how to act if the result is not successful.
 
 The next two steps are to filter and sort the events. These are page actions of the EventPage, so the workflow calls each and the page action returns results.
 
