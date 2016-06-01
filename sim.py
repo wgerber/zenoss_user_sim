@@ -1,4 +1,4 @@
-import sys, random
+import sys, random, socket
 import time, traceback, argparse
 from xvfbwrapper import Xvfb
 import multiprocessing as mp
@@ -106,18 +106,43 @@ def pushToTsdb(url, queue):
     while obj != 'STOP':
         try:
             # When the timeout is too long, some data get lost.
-            obj = queue.get(timeout=7)
+            obj = queue.get(timeout=1)
             data += obj
         except Queue.Empty:
             headers={'Content-type': 'application/json', 'Accept': 'text/plain'}
             if data:
                 print 'Posting {} data points to tsdb'.format(len(data))
+                print data
                 r=requests.post(
                         url + "/api/put",
                         data=json.dumps(data), headers=headers, verify=False)
                 print 'Posting data to tsdb {}'.format(
                         'succeeded' if r.ok else 'failed')
             data = []
+
+def countUser(tsdbUrl, startTime, endTime):
+    headers={'Content-type': 'application/json', 'Accept': 'text/plain'}
+    url = (tsdbUrl + "/api/query"
+           + '?start=' + time.strftime('%Y/%m/%d-%H:%M:%S', time.gmtime(startTime))
+           + '&end=' + time.strftime('%Y/%m/%d-%H:%M:%S', time.gmtime(endTime))
+           + '&m=zimsum:userCountDelta')
+    r = requests.get(
+            url, data=json.dumps({}), headers=headers, verify=False)
+
+    userCountDelta = r.json()[0]['dps']
+    sortedTime = sorted(userCountDelta.keys())
+    count = 0
+    data = []
+    for t in sortedTime:
+        count += userCountDelta[t]
+        data += [{'timestamp': float(t), 'metric': 'userCount', 'value': count, 'tags': {'host': socket.gethostname()}}]
+
+    r = requests.post(
+            tsdbUrl + "/api/put",
+            data=json.dumps(data), headers=headers, verify=False)
+    if not r.ok:
+        print 'Failed to post user count to tsdb'
+        print r['error']['message']
 
 if __name__ == '__main__':
     try:
@@ -160,6 +185,15 @@ if __name__ == '__main__':
                     died += 1
                     print colorizeString("%i users died so far, %i currently running" % (died, len(processes)), "DEBUG")
 
+            # Push the number of quitters to tsdb
+            if toRemove:
+                key = 'userCountDelta'
+                value = -len(toRemove)
+                tags = {'host': socket.gethostname()}
+                data = [{'timestamp': time.time(), 'metric': key, 'value': value, 'tags': tags}]
+                tsdbQueue.put(data)
+                print 'Pushed the number of quitters {} to tsdb'.format(value)
+
             # remove any dead users
             for p in toRemove:
                 processes.remove(p)
@@ -167,6 +201,7 @@ if __name__ == '__main__':
             remainingWorkTime = args.duration - (time.time() - startTime)
 
             # if work should continue, add users to keep process list full
+            userIncrement = 0
             if shouldWork and len(processes) < args.users:
                 # TODO - skill level
                 userName = "bob%i" % userCount
@@ -175,6 +210,7 @@ if __name__ == '__main__':
                     args.headless, args.logDir, args.chromedriver,
                     remainingWorkTime, args.workflows, tsdbQueue))
                 userCount += 1
+                userIncrement += 1
                 print colorizeString("%s - started user %s" % (time.asctime(), userName), "DEBUG")
                 processes.append(p)
                 p.start()
@@ -183,10 +219,21 @@ if __name__ == '__main__':
                 # prevent all users from logging in at once
                 time.sleep(4)
 
+            # Push the number of quitters to tsdb
+            if userIncrement:
+                key = 'userCountDelta'
+                value = userIncrement
+                tags = {'host': socket.gethostname()}
+                data = [{'timestamp': time.time(), 'metric': key, 'value': value, 'tags': tags}]
+                tsdbQueue.put(data)
+                print 'Pushed the number of new users {} to tsdb'.format(value)
+
             # is it quittin time yet?
             if remainingWorkTime < 0 and shouldWork:
                 shouldWork = False
                 print colorizeString("%s - it's quitting time yall. finish what youre doing" % time.asctime(), "DEBUG")
+
+            time.sleep(1)
 
     except:
         traceback.print_exc()
@@ -200,3 +247,4 @@ if __name__ == '__main__':
         print colorizeString("start: %s, end: %s" % \
                 (time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(startTime)),
                     time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(endTime))), "DEBUG")
+        countUser(args.tsdbUrl, startTime, endTime)
