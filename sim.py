@@ -3,11 +3,19 @@ import time, traceback, argparse
 from xvfbwrapper import Xvfb
 import multiprocessing as mp
 import Queue
+import requests
+
+# disable warnings when posting to our tsdb
+# with self-signed cert
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 from workflows import MonitorEvents, LogInOutWorkflow, MonitorDashboard, InvestigateDevice
 from user import *
 
 HOUR_TO_SEC = 3600
+# frequency to check on users, spin up new users, etc
+USER_MONITOR_INTERVAL = 0.5
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Spin up some simulated users")
@@ -27,13 +35,16 @@ def parse_args():
             dest="headless", action="store_true", help="if simulations should run headless")
     parser.add_argument("--no-headless",
             dest="headless", action="store_false", help="if simulations should run headless")
-    parser.set_defaults(headless=True)
     parser.add_argument('--duration', dest = 'duration', default = 0,
             help = 'duration in seconds that workflows will be repeated', type = float)
     parser.add_argument('--workflows', dest = 'workflows', default = '',
             help = 'workflows to run, a comma separated string')
     parser.add_argument('--tsdb-url', dest = 'tsdbUrl', default = '',
             help = 'OpenTSDB URL')
+    parser.add_argument('--leader', dest = 'leader', action = 'store_true',
+            help = 'the leader processes additional stats')
+
+    parser.set_defaults(headless=True, leader=False)
 
     # TODO - skill level
     # TODO - more sensible defaults and argument config
@@ -84,16 +95,12 @@ def startUser(name, url, username, password, headless, logDir, chromedriver,
 
     try:
         user.work()
-    except:
+    except KeyboardInterrupt:
+        pass
+    except Exception:
         user.log("%s raised an uncaught exception" % user.name, severity="ERROR")
         traceback.print_exc()
     finally:
-        #log results
-        resultsStr = ""
-        for result in user.results:
-            resultsStr += str(result)
-            resultsStr += ","
-        user.log(resultsStr, toConsole=False)
         print "cleaning up %s" % user.name
         user.quit()
         if headless:
@@ -113,11 +120,14 @@ def pushToTsdb(url, queue):
             if data:
                 print 'Posting {} data points to tsdb'.format(len(data))
                 print data
-                r=requests.post(
+                r = requests.post(
                         url + "/api/put",
                         data=json.dumps(data), headers=headers, verify=False)
-                print 'Posting data to tsdb {}'.format(
-                        'succeeded' if r.ok else 'failed')
+                if r.status_code != 204:
+                    print "Failed to post datapoints to tsdb"
+                    print r.status_code
+                else:
+                    print "Posted %i datapoints to tsdb" % len(data)
             data = []
 
 def countUser(tsdbUrl, startTime, endTime):
@@ -143,6 +153,9 @@ def countUser(tsdbUrl, startTime, endTime):
     if not r.ok:
         print 'Failed to post user count to tsdb'
         print r['error']['message']
+
+names = ["Obak", "Uglug", "Oldog", "Olfil", "Shagrat", "Mauhagr",
+        "Oldolg", "Othrol", "Lagdush", "Orgod"]
 
 if __name__ == '__main__':
     try:
@@ -170,20 +183,21 @@ if __name__ == '__main__':
 
         startTime = time.time()
         processes = []
-        died = 0
+        done = 0
         userCount = 0
         shouldWork = True
 
         # if its worktime or there are any processes
         # left working, do work!
         while len(processes) or shouldWork:
-            # check for users that died
+            # check for users that have stopped
+            # TODO - distinguish failed from completed
             toRemove = []
             for p in processes:
                 if not p.is_alive():
                     toRemove.append(p)
-                    died += 1
-                    print colorizeString("%i users died so far, %i currently running" % (died, len(processes)), "DEBUG")
+                    done += 1
+                    print colorizeString("%i users done so far, %i currently running" % (done, len(processes)), "DEBUG")
 
             # Push the number of quitters to tsdb
             if toRemove:
@@ -204,7 +218,7 @@ if __name__ == '__main__':
             userIncrement = 0
             if shouldWork and len(processes) < args.users:
                 # TODO - skill level
-                userName = "bob%i" % userCount
+                userName = "%s_%i" % (random.choice(names), userCount)
                 p = mp.Process(target=startUser, args=(
                     userName, args.url, args.username, args.password,
                     args.headless, args.logDir, args.chromedriver,
@@ -233,8 +247,7 @@ if __name__ == '__main__':
                 shouldWork = False
                 print colorizeString("%s - it's quitting time yall. finish what youre doing" % time.asctime(), "DEBUG")
 
-            time.sleep(1)
-
+            time.sleep(USER_MONITOR_INTERVAL)
     except:
         traceback.print_exc()
 
@@ -247,4 +260,5 @@ if __name__ == '__main__':
         print colorizeString("start: %s, end: %s" % \
                 (time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(startTime)),
                     time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(endTime))), "DEBUG")
-        countUser(args.tsdbUrl, startTime, endTime)
+        if args.leader:
+            countUser(args.tsdbUrl, startTime, endTime)

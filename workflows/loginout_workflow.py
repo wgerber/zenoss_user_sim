@@ -3,53 +3,14 @@ from common import *
 from pages import LoginPage, NavigationPage
 
 class Login(Workflow):
-    @timed
     def run(self, user, pushActionStat):
-        result = WorkflowResult(self.name)
-
-        takeAction(
-            result, LoginPage.login,
-            user, pushActionStat, user.url, user.username, user.password)
-        if not result.success:
-            return result
-
+        LoginPage.login(user, pushActionStat, user.url, user.username, user.password)
         user.loggedIn = True
         user.think(1)
-        return result
 
 class Logout(Workflow):
-    @timed
     def run(self, user, pushActionStat):
-        result = WorkflowResult(self.name)
-
         if not user.loggedIn:
-            result.fail("user is not logged in")
-            return result
-        takeAction(result, NavigationPage.logout, user, pushActionStat)
-        if not result.success:
-            return result
-
+            raise WorkflowException(whoami(), "user is not logged in")
+        NavigationPage.logout(user, pushActionStat)
         user.loggedIn = False
-
-        return result
-
-class LoginAndLogout(Workflow):
-    @timed
-    def run(self, user):
-        result = WorkflowResult(self.name)
-
-        start = time.time()
-        takeAction(
-            result, LoginPage.login,
-            user, pushActionStat, user.url, user.username, user.password)
-        if not result.success:
-            return result
-
-        user.think(1)
-
-        takeAction(result, NavigationPage.logout, user, pushActionStat)
-        if not result.success:
-            return result
-
-        return result
-
