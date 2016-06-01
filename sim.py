@@ -20,6 +20,7 @@ USER_MONITOR_INTERVAL = 0.5
 # the minimum value; it will be used after a push
 # has completed
 TSDB_PUSH_INTERVAL = 1
+TSDB_METRIC_BATCH_MAX = 30
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Spin up some simulated users")
@@ -115,7 +116,7 @@ def pushToTsdb(url, queue):
     data = []
     obj = None
     try:
-        while queue.qsize() and len(data) < 15:
+        while queue.qsize() and len(data) < TSDB_METRIC_BATCH_MAX:
             obj = queue.get()
             data += obj
     except Queue.Empty:
