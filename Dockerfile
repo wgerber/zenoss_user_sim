@@ -26,10 +26,9 @@ RUN rm chromedriver*
 ADD *.py ./
 ADD workflows ./workflows
 ADD pages ./pages
+ADD entrypoint.sh /
 
-# TODO - shell script entrypoint to catch signals
-# and stop script before killing the container
-ENTRYPOINT ["python", "-u", "sim.py"]
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["--help"]
 
 # NOTE
