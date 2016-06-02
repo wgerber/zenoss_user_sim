@@ -13,20 +13,23 @@ if [ -z $pass ]; then
     exit 1;
 fi
 
+# TODO - optionally configure these via args
 logdir="$(pwd)/log"
 user="zenny"
 workflows="MonitorEvents, InvestigateDevice, MonitorDashboard, InvestigateDevice, MonitorDevices"
+duration=900
+url="https://zenoss5.graveyard.zenoss.loc"
 
 docker run --privileged \
     -v "$logdir":/root/log \
     -v /dev/shm:/dev/shm \
     -v /etc/hosts:/etc/hosts \
     zenoss/usersim:v1 \
-    -u https://zenoss5.graveyard.zenoss.loc \
-    -n $user \
-    -p $pass \
+    -u "$url" \
+    -n "$user" \
+    -p "$pass"\
     -c $count \
-    --duration 950 \
+    --duration $duration \
     --log-dir ./log \
     --tsdb-url https://opentsdb.graveyard \
     --workflows "$workflows"

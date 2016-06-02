@@ -29,6 +29,7 @@ class User(object):
             self.driver = webdriver.Chrome(chromedriver)
         else:
             self.driver = webdriver.Chrome()
+        self.driver.set_page_load_timeout(DEFAULT_TIMEOUT)
         self.workflows = []
         self.results = []
         self.hasQuit = False
