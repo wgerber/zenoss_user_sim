@@ -6,7 +6,14 @@ A Dockerfile is included that will build an image which can point simulated user
 
     docker build -t zenoss/usersim:v1 .
 
-Once the build is complete, the image can be launched and command line arguments passed in
+Once the build is complete, the image can be launched and command line arguments passed in via sim.sh
+
+    # first arg is number of simulated users, second arg is zenoss password
+    ./sim.sh 1 ZenossPassword
+
+`sim.sh` assumes you want to use zenoss user `zenny` and that you have `$(pwd)/log` available to write logs to.
+
+Or if you prefer, you can wrangle absurdly long commands like this:
 
     docker run --privileged -t \
         -v $(pwd)/log:/root/log \
