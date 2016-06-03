@@ -6,7 +6,7 @@ locator = {'header': '#header',
         "appPortal": "#app-portal"}
 
 @assertPage('title', TITLE)
-def checkPageLoaded(user, pushActionStat):
+def checkPageReady(user, pushActionStat):
     start = time.time()
     try:
         find(user.driver, locator["appPortal"])
