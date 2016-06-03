@@ -35,12 +35,11 @@ def login(user, pushActionStat, url, username, password):
         user.think(1)
         pass_field.send_keys(password)
         user.think(1)
-        # just record the time it takes for the
-        # click to fail, if any
-        start = time.time()
+        # after click, the dashboard page is loaded,
+        # so this may take a bit of time
         submit_btn.click()
     except Exception as e:
         raise PageActionException(whoami(),
                 "unexpected failure in logging in to %s: %s" % (url, e.msg),
                 screen=e.screen)
-    pushActionStat(whoami() + "_fillform", 'waitTime', time.time() - start, start)
+    pushActionStat(whoami() + "_submitAndNavigate", 'waitTime', time.time() - start, start)
