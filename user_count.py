@@ -56,6 +56,7 @@ def countUser(tsdbUrl, startTime, endTime, simId):
         bufferSize = 30 # messages
         for i in range(len(data)/bufferSize + 1):
             part = data[bufferSize*i:bufferSize*(i+1)]
+            print part
             r = requests.post(
                     tsdbUrl + "/api/put",
                     data=json.dumps(part),
@@ -68,7 +69,4 @@ def countUser(tsdbUrl, startTime, endTime, simId):
 if __name__ == '__main__':
     args = parse_args()
 
-#    tsdbUrl = 'http://10.87.128.92:4242'
-#    startTime = '2016/06/01-07:00:00'
-#    endTime = '2016/06/01-22:00:00'
     countUser(args.url, args.startTime, args.endTime, args.simId)
