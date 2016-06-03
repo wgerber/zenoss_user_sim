@@ -9,9 +9,6 @@ locator = {"loginField": "#username",
 
 @assertPageAfter('title', 'Zenoss: Dashboard')
 def login(user, pushActionStat, url, username, password):
-    waitTime = 0
-
-    actionStart = time.time()
     start = time.time()
     try:
         # TODO - enforce a timeout on this
@@ -20,7 +17,7 @@ def login(user, pushActionStat, url, username, password):
         raise PageActionException(whoami(),
                 "could not navigate to %s because %s" % (url, e.msg),
                 screen=e.screen)
-    waitTime += time.time() - start
+    pushActionStat(whoami() + "_getUrl", 'waitTime', time.time() - start, start)
 
     start = time.time()
     try:
@@ -31,20 +28,19 @@ def login(user, pushActionStat, url, username, password):
         raise PageActionException(whoami(),
                 "unexpected failure logging in to %s: %s" % (url, e.msg),
                 screen=e.screen)
-    waitTime += time.time() - start
+    pushActionStat(whoami() + "_findFormElements", 'waitTime', time.time() - start, start)
 
-    start = time.time()
     try:
         login_field.send_keys(username)
         user.think(1)
         pass_field.send_keys(password)
         user.think(1)
+        # just record the time it takes for the
+        # click to fail, if any
+        start = time.time()
         submit_btn.click()
     except Exception as e:
         raise PageActionException(whoami(),
                 "unexpected failure in logging in to %s: %s" % (url, e.msg),
                 screen=e.screen)
-    waitTime += time.time() - start
-
-    waitTime = time.time() - actionStart
-    pushActionStat(whoami(), 'waitTime', waitTime, actionStart)
+    pushActionStat(whoami() + "_fillform", 'waitTime', time.time() - start, start)
