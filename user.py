@@ -17,7 +17,7 @@ GODLIKE = 0
 REDDIT_TIME = 2
 
 class User(object):
-    def __init__(self, name, url, username, password, skill=INTERMEDIATE, logDir="", chromedriver=None, duration=0, tsdbQueue = None):
+    def __init__(self, name, url, username, password, skill=INTERMEDIATE, logDir="", chromedriver=None, duration=0, tsdbQueue = None, simId = ''):
         self.name = name
         self.url = url
         self.username = username
@@ -39,6 +39,7 @@ class User(object):
         self.workflowsComplete = 0
         self.workflowsFailed = 0
         self.tsdbQueue = tsdbQueue
+        self.simId = simId
 
     # perform a workflow and handle any exceptions it may raise
     def executeWorkflow(self, workflow, pushActionStat):
@@ -81,7 +82,8 @@ class User(object):
         login = self.workflows[0] # Assume the first workflow is always Login.
         logout = self.workflows[-1] # Assume the last workflow is always Logout.
 
-        pushActionStat = getPushActionStat(self.tsdbQueue, self.name, login.name)
+        pushActionStat = getPushActionStat(
+                self.tsdbQueue, self.name, login.name, self.simId)
         if not self.executeWorkflow(login, pushActionStat):
             # TODO - handle more gracefully
             self.log("could not log in", severity="ERROR")
@@ -95,7 +97,7 @@ class User(object):
             for workflow in self.workflows[1:-1]:
 		self.log("I've worked for %is of my total %is" % (time.time() - start, self.duration))
                 self.log("beginning workflow %s" % workflow.name)
-                pushActionStat = getPushActionStat(self.tsdbQueue, self.name, workflow.name)
+                pushActionStat = getPushActionStat(self.tsdbQueue, self.name, workflow.name, self.simId)
 
                 # perform workflow and handle exceptions
                 # TODO - catch uncaught exceptions and gracefully
@@ -117,7 +119,8 @@ class User(object):
                     atWork = False
                     break
 
-        pushActionStat = getPushActionStat(self.tsdbQueue, self.name, logout.name)
+        pushActionStat = getPushActionStat(
+                self.tsdbQueue, self.name, logout.name, self.simId)
         if not self.executeWorkflow(logout, pushActionStat):
             # TODO - handle more gracefully
             self.log("could not log out", severity="ERROR")

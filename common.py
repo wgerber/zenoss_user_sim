@@ -95,21 +95,21 @@ class Workflow(object):
     def __init__(self, **kwargs):
         self.name = self.__class__.__name__
 
-def pushStat(queue, user, workflow, action, key, value, timestamp):
+def pushStat(queue, user, workflow, action, key, value, timestamp, simId):
     if queue:
         tags = {'host': socket.gethostname()}
         for k, v in zip(
-                ['user', 'workflow', 'action'],
-                [user, workflow, action]):
+                ['user', 'workflow', 'action', 'simId'],
+                [user, workflow, action, simId]):
             if v:
                 tags[k] = v
 
         data = [{'timestamp': timestamp, 'metric': key, 'value': value, 'tags': tags}]
         queue.put(data)
 
-def getPushActionStat(queue, user, workflow):
+def getPushActionStat(queue, user, workflow, simId):
     def fn(action, key, value, timestamp):
-        pushStat(queue, user, workflow, action, key, value, timestamp)
+        pushStat(queue, user, workflow, action, key, value, timestamp, simId)
     return fn
 
 def colorizeString(s, severity):

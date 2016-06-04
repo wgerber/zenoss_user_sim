@@ -48,6 +48,8 @@ def parse_args():
             help = 'OpenTSDB URL')
     parser.add_argument('--leader', dest = 'leader', action = 'store_true',
             help = 'the leader processes additional stats')
+    parser.add_argument('--simId', dest = 'simId', default = '',
+            help = 'id with which all metrics from this simulation will be tagged')
 
     parser.set_defaults(headless=True, leader=False)
 
@@ -70,14 +72,14 @@ def parse_args():
         return args
 
 def startUser(name, url, username, password, headless, logDir, chromedriver,
-        duration, workflowNames, tsdbQueue):
+        duration, workflowNames, tsdbQueue, simId):
     if headless:
         xvfb = Xvfb(width=1100, height=800)
         xvfb.start()
 
     user = User(name, url=url, username=username, password=password,
             logDir=logDir, chromedriver=chromedriver, duration=duration,
-            tsdbQueue=tsdbQueue)
+            tsdbQueue=tsdbQueue, simId=simId)
 
     # Always start with Login() and end with Logout(). There has to be at least
     # one workflow between Login() and Logout().
@@ -222,7 +224,7 @@ if __name__ == '__main__':
                 p = mp.Process(target=startUser, args=(
                     userName, args.url, args.username, args.password,
                     args.headless, args.logDir, args.chromedriver,
-                    remainingWorkTime, args.workflows, tsdbQueue))
+                    remainingWorkTime, args.workflows, tsdbQueue, args.simId))
                 userCount += 1
                 userIncrement += 1
                 print colorizeString("%s - started user %s" % (time.asctime(), userName), "DEBUG")
