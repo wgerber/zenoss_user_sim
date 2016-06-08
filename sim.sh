@@ -22,7 +22,7 @@ docker run --privileged \
     -v "$logdir":/root/log \
     -v /dev/shm:/dev/shm \
     -v /etc/hosts:/etc/hosts \
-    zenoss/usersim:v1 \
+    zenoss/usersim:v2 \
     -u https://zenoss5.graveyard.zenoss.loc \
     -n $user \
     -p $pass \

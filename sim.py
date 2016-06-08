@@ -168,15 +168,21 @@ def processResults(results, userCount, duration):
     for result in userResults:
         r[result["workflow"]] += 1;
 
-    print colorizeString("total workflows: %i/%i (failed/complete)" % (
-        r["failed"], r["complete"]), "DEBUG")
-    print colorizeString("average workflows per user: %.02f/%i (failed/complete)" % (
-        r["failed"] / userCount, r["complete"] / userCount), "DEBUG")
-    print colorizeString("average completed workflows per minute: %.02f" % (
+    print colorizeString("workflows: total %i (%i failed)" % (
+        r["complete"], r["failed"]), "DEBUG")
+    print colorizeString("workflows: avg per user %i (%.2f failed)" % (
+        r["complete"] / userCount, r["failed"] / userCount), "DEBUG")
+    print colorizeString("workflows: average completed per minute: %.02f" % (
         (duration / r["complete"]) / 60), "DEBUG")
 
-names = ["Obak", "Uglug", "Oldog", "Olfil", "Shagrat", "Mauhagr",
-        "Oldolg", "Othrol", "Lagdush", "Orgod"]
+names = ["Griggs_of_Vinheim", "Blacksmith_Rickert_of_Vinheim", "Big_Hat_Logan", "Dusk_of_Oolacile", "Ingward", "Laurentius_of_the_Great_Swamp",
+        "Quelana_of_Izalith", "Eingyi_of_the_Great_Swamp", "Petrus_of_Thorolund", "Reah_of_Thorolund", "Crestfallen_Warrior",
+        "Anastacia_of_Astora", "Kingseeker_Frampt", "Vince_of_Thorolund", "Nico_of_Thorolund", "Solaire_of_Astora", "Andre_of_Astora",
+        "Knight_Lautrec_Of_Carim", "Oswald_of_Carim", "Alvina_of_the_Darkroot_Wood", "Shiva_of_the_East", "Domhnall_of_Zena", "Quelaan",
+        "Siegmeyer_of_Catarina", "Crestfallen_Merchant", "Ingward", "Darkstalker_Kaathe", "Darkmoon_Knightess", "Gwynevere", "Gwyndolin",
+        "Giant_Blacksmith", "Crossbreed_Priscilla", "Blacksmith_Vamos", "Patches_the_Hyena", "Sieglinde_of_Catarina", "Elizabeth", "Marvelous_Chester",
+        "Lord's_Blade_Ciaran", "Hawkeye_Gough", "Maneater_Mildred", "Witch_Beatrice", "King_Jeremiah", "Knight_Kirk", "Paladin_Leeroy",
+        "Iron_Knight_Tarkus", "Havel_The_Rock", "Oscar_of_Astora", "Chaos_Servant", "Prince_Ricard"]
 
 if __name__ == '__main__':
     try:
