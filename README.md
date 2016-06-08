@@ -70,6 +70,7 @@ Pages and page actions are the nitty gritty of selenium and the DOM. Selenium an
 * A page action should not return until it is sure the page is ready. Find some DOM element or something to look for to ensure the page is actually ready and not merely loaded
 * When returning results from a page action, a) it must not be selenium objects and b) make sure the result contains something that can be re-queried from the DOM
 * Be sure to catch any selenium exceptions and return `PageActionException` instead.
+* Use timers to track stats for all public page actions, but don't put timers inside private functions
 
 **Workflows**
 Workflows outline the pages actions to perform to complete a task. Workflows should know nothing of the DOM or selenium.

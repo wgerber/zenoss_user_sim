@@ -16,26 +16,25 @@ locator = {'navBtns': '#deviceDetailNav-body table .x-grid-row',
            "componentCardEventTable": "#component_card-body #event_panel .x-grid-table"}
 
 def checkPageReady(user, pushActionStat):
-    start = ts()
-    waitWatch = StopWatch().start()
-    elapsedWatch = StopWatch().start()
+    waitTimer = StatRecorder(pushActionStat, whoami(), "waitTime");
+    elapsed = StatRecorder(pushActionStat, whoami(), "elapsedTime");
+    elapsed.start()
+    waitTimer.start()
     try:
         find(user.driver, locator["deviceDetailNav"])
     except Exception as e:
         raise PageActionException(whoami(),
                 "could not find deviceDetailNav element: %s" % e.msg,
                 screen=e.screen)
-    end = ts()
-    pushActionStat(whoami(), 'waitTime', waitWatch.total, start)
-    pushActionStat(whoami(), 'waitTime', waitWatch.total, end)
-    pushActionStat(whoami(), 'elapsedTime', elapsedWatch.total, start)
-    pushActionStat(whoami(), 'elapsedTime', elapsedWatch.total, end)
+    waitTimer.stop()
+    elapsed.stop()
 
 @retry(MAX_RETRIES)
 def viewDeviceGraphs(user, pushActionStat):
-    start = ts()
-    waitWatch = StopWatch().start()
-    elapsedWatch = StopWatch().start()
+    waitTimer = StatRecorder(pushActionStat, whoami(), "waitTime");
+    elapsed = StatRecorder(pushActionStat, whoami(), "elapsedTime");
+    elapsed.start()
+    waitTimer.start()
     rows = []
     try:
         rows = findMany(user.driver, locator["deviceDetailNavRows"])
@@ -68,19 +67,17 @@ def viewDeviceGraphs(user, pushActionStat):
                 "could not find a single teeny tiny itty bitty graph. Not even one.",
                 screen=user.driver.get_screenshot_as_png())
 
-    end = ts()
-    pushActionStat(whoami(), 'waitTime', waitWatch.total, start)
-    pushActionStat(whoami(), 'waitTime', waitWatch.total, end)
-    pushActionStat(whoami(), 'elapsedTime', elapsedWatch.total, start)
-    pushActionStat(whoami(), 'elapsedTime', elapsedWatch.total, end)
+    waitTimer.stop()
+    elapsed.stop()
 
 @retry(MAX_RETRIES)
 def interactWithDeviceGraphs(user, pushActionStat):
     buttonEls = []
-    start = ts()
-    waitWatch = StopWatch().start()
-    elapsedWatch = StopWatch().start()
-    thinkWatch = StopWatch()
+    waitTimer = StatRecorder(pushActionStat, whoami(), "waitTime");
+    elapsed = StatRecorder(pushActionStat, whoami(), "elapsedTime");
+    think = StatRecorder(pushActionStat, whoami(), "thinkTime");
+    elapsed.start()
+    waitTimer.start()
 
     # pan back a few times
     for _ in xrange(4):
@@ -106,14 +103,14 @@ def interactWithDeviceGraphs(user, pushActionStat):
                     screen=e.screen)
         # TODO - wait till graph updates
 
-    waitWatch.stop()
+    waitTimer.stop()
 
     # contemplate life, the universe, and everything
-    thinkWatch.start()
+    think.start()
     user.think(4)
-    thinkWatch.stop()
+    think.stop()
 
-    waitWatch.start()
+    waitTimer.start()
     # zoom out a few times
     for _ in xrange(2):
         # find graph controls
@@ -138,29 +135,24 @@ def interactWithDeviceGraphs(user, pushActionStat):
                     screen=e.screen)
         # TODO - wait till graph updates
 
-    waitWatch.stop()
+    waitTimer.stop()
 
     # just take a minute. just stop and take a minute and think
-    thinkWatch.start()
+    think.start()
     user.think(4)
-    thinkWatch.stop()
+    think.stop()
 
-    end = ts()
-    pushActionStat(whoami(), 'waitTime', waitWatch.total, start)
-    pushActionStat(whoami(), 'waitTime', waitWatch.total, end)
-    pushActionStat(whoami(), 'elapsedTime', elapsedWatch.total, start)
-    pushActionStat(whoami(), 'elapsedTime', elapsedWatch.total, end)
-    pushActionStat(whoami(), 'thinkTime', thinkWatch.total, start)
-    pushActionStat(whoami(), 'thinkTime', thinkWatch.total, end)
+    elapsed.stop()
 
 @retry(MAX_RETRIES)
 def viewComponentDetails(user, pushActionStat, componentName):
     componentRows = _getComponentRows(user)
 
-    waitWatch = StopWatch().start()
-    elapsedWatch = StopWatch().start()
-    thinkWatch = StopWatch()
-    start = ts()
+    waitTimer = StatRecorder(pushActionStat, whoami(), "waitTime");
+    elapsed = StatRecorder(pushActionStat, whoami(), "elapsedTime");
+    think = StatRecorder(pushActionStat, whoami(), "thinkTime");
+    elapsed.start()
+    waitTimer.start()
 
     foundComp = False
     for rowEl in componentRows:
@@ -188,15 +180,15 @@ def viewComponentDetails(user, pushActionStat, componentName):
 
     _selectComponentSection(user, "Graphs")
 
-    waitWatch.stop()
+    waitTimer.stop()
 
     # TODO - wait till graphs or "no data" message
     # TODO - interact with graphs
-    thinkWatch.start()
+    think.start()
     user.think(4)
-    thinkWatch.stop()
+    think.stop()
 
-    waitWatch.start()
+    waitTimer.start()
     _selectComponentSection(user, "Events")
 
     try:
@@ -207,23 +199,22 @@ def viewComponentDetails(user, pushActionStat, componentName):
                 screen=e.screen)
 
 
-    waitWatch.stop()
+    waitTimer.stop()
     # TODO - ensure event table rows have loaded
-    thinkWatch.start()
+    think.start()
     user.think(4)
-    thinkWatch.stop()
+    think.stop()
+    elapsed.stop()
 
-    end = ts()
-    pushActionStat(whoami(), 'waitTime', waitWatch.total, start)
-    pushActionStat(whoami(), 'waitTime', waitWatch.total, end)
-    pushActionStat(whoami(), 'elapsedTime', elapsedWatch.total, start)
-    pushActionStat(whoami(), 'elapsedTime', elapsedWatch.total, end)
-    pushActionStat(whoami(), 'thinkTime', thinkWatch.total, start)
-    pushActionStat(whoami(), 'thinkTime', thinkWatch.total, end)
-
-def getComponentNames(user):
+def getComponentNames(user, pushActionStat):
+    waitTimer = StatRecorder(pushActionStat, whoami(), "waitTime");
+    elapsed = StatRecorder(pushActionStat, whoami(), "elapsedTime");
+    elapsed.start()
+    waitTimer.start()
     # NOTE - the name includes the component count
     return map(lambda x: x.text, _getComponentRows(user))
+    waitTimer.stop()
+    elapsed.stop()
 
 def _getComponentRows(user):
     componentRows = []

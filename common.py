@@ -188,12 +188,12 @@ class StatRecorder(object):
         self.startTime = time.time()
 
     def stop(self):
-        if not self.lastTime:
+        if not self.startTime:
             return
-        end = ts()
-        self._pushStat(self.startTime - end, self.startTime, end)
+        self._pushStat(self.startTime, time.time())
         self.startTime = None
 
-    def _pushStat(self, total, start, end):
+    def _pushStat(self, start, end):
+        total = end - start
         self.pushFn(self.name, self.metric, total, start)
         self.pushFn(self.name, self.metric, total, end)
