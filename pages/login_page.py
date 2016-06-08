@@ -10,7 +10,6 @@ locator = {"loginField": "#username",
 def login(user, pushActionStat, url, username, password):
     start = time.time()
     try:
-        # TODO - enforce a timeout on this
         user.driver.get(url)
     except Exception as e:
         raise PageActionException(whoami(),

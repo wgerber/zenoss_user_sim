@@ -72,14 +72,14 @@ def parse_args():
         return args
 
 def startUser(name, url, username, password, headless, logDir, chromedriver,
-        duration, workflowNames, tsdbQueue, simId):
+        workflowNames, tsdbQueue, quitQueue, resultsQueue, simId):
     if headless:
         xvfb = Xvfb(width=1100, height=800)
         xvfb.start()
 
     user = User(name, url=url, username=username, password=password,
-            logDir=logDir, chromedriver=chromedriver, duration=duration,
-            tsdbQueue=tsdbQueue, simId=simId)
+            logDir=logDir, chromedriver=chromedriver, tsdbQueue=tsdbQueue,
+            quitQueue=quitQueue, resultsQueue=resultsQueue, simId=simId)
 
     # Always start with Login() and end with Logout(). There has to be at least
     # one workflow between Login() and Logout().
@@ -158,6 +158,23 @@ def countUser(tsdbUrl, startTime, endTime):
         print 'Failed to post user count to tsdb'
         print r['error']['message']
 
+# aggregate result data
+# TODO - this can go away when these stats are pushed to tsdb
+def processResults(results, userCount, duration):
+    r = {
+        "failed": 0,
+        "complete": 0}
+    # TODO - stats per user?
+    for result in userResults:
+        r[result["workflow"]] += 1;
+
+    print colorizeString("total workflows: %i/%i (failed/complete)" % (
+        r["failed"], r["complete"]), "DEBUG")
+    print colorizeString("average workflows per user: %.02f/%i (failed/complete)" % (
+        r["failed"] / userCount, r["complete"] / userCount), "DEBUG")
+    print colorizeString("average completed workflows per minute: %.02f" % (
+        (duration / r["complete"]) / 60), "DEBUG")
+
 names = ["Obak", "Uglug", "Oldog", "Olfil", "Shagrat", "Mauhagr",
         "Oldolg", "Othrol", "Lagdush", "Orgod"]
 
@@ -182,7 +199,12 @@ if __name__ == '__main__':
                 args.users, args.url, args.username, "True" if args.headless else "False", args.workflows,
                 args.duration, args.simId, args.logDir)
 
+        # for pushing tsdb stats
         tsdbQueue = mp.Queue()
+        # broadcast when its quittin time
+        quitQueue = mp.Queue()
+        # push workflow results from user to sim
+        resultsQueue = mp.Queue()
 
         startTime = time.time()
         processes = []
@@ -190,6 +212,7 @@ if __name__ == '__main__':
         userCount = 0
         shouldWork = True
         lastPush = time.time()
+        userResults = []
 
         # if its worktime or there are any processes
         # left working, do work!
@@ -216,7 +239,6 @@ if __name__ == '__main__':
             for p in toRemove:
                 processes.remove(p)
 
-            remainingWorkTime = args.duration - (time.time() - startTime)
 
             # if work should continue, add users to keep process list full
             userIncrement = 0
@@ -226,7 +248,8 @@ if __name__ == '__main__':
                 p = mp.Process(target=startUser, args=(
                     userName, args.url, args.username, args.password,
                     args.headless, args.logDir, args.chromedriver,
-                    remainingWorkTime, args.workflows, tsdbQueue, args.simId))
+                    args.workflows, tsdbQueue, quitQueue,
+                    resultsQueue, args.simId))
                 userCount += 1
                 userIncrement += 1
                 print colorizeString("%s - started user %s" % (time.asctime(), userName), "DEBUG")
@@ -247,11 +270,21 @@ if __name__ == '__main__':
                 print 'Pushed the number of new users {} to tsdb'.format(value)
 
             # is it quittin time yet?
+            remainingWorkTime = args.duration - (time.time() - startTime)
             if remainingWorkTime < 0 and shouldWork:
                 shouldWork = False
+                quitQueue.put("QUIT")
                 print colorizeString("%s - it's quitting time yall. finish what youre doing" % time.asctime(), "DEBUG")
 
-            # push some stats?
+            # add user results to local thingies
+            # TODO - dont do this on main thread? limit
+            # amount of gets?
+            try:
+                while resultsQueue.qsize():
+                    userResults.append(resultsQueue.get())
+            except Queue.Empty:
+                pass
+
             now = time.time()
             if now - lastPush > TSDB_PUSH_INTERVAL:
                 pushToTsdb(args.tsdbUrl, tsdbQueue)
@@ -273,5 +306,6 @@ if __name__ == '__main__':
         print colorizeString("start: %s, end: %s" % \
                 (time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(startTime)),
                     time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(endTime))), "DEBUG")
+        processResults(userResults, args.users, endTime - startTime)
         if args.leader:
             countUser(args.tsdbUrl, startTime, endTime)
