@@ -177,8 +177,10 @@ if __name__ == '__main__':
             "    headless: %s\n"
             "    workflows: %s\n"
             "    duration: %is\n"
+            "    simId: %s\n"
             "    logDir: %s") % (
-                args.users, args.url, args.username, "True" if args.headless else "False", args.workflows, args.duration, args.logDir)
+                args.users, args.url, args.username, "True" if args.headless else "False", args.workflows,
+                args.duration, args.simId, args.logDir)
 
         tsdbQueue = mp.Queue()
 

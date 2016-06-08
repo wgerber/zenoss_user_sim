@@ -16,6 +16,7 @@ fi
 logdir="$(pwd)/log"
 user="zenny"
 workflows="MonitorEvents, InvestigateDevice, MonitorDashboard, InvestigateDevice, MonitorDevices"
+simId="dockerSim$RANDOM"
 
 docker run --privileged \
     -v "$logdir":/root/log \
@@ -29,4 +30,5 @@ docker run --privileged \
     --duration 950 \
     --log-dir ./log \
     --tsdb-url https://opentsdb.graveyard \
-    --workflows "$workflows"
+    --workflows "$workflows" \
+    --simId "$simId"
