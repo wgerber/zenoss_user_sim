@@ -230,7 +230,6 @@ if __name__ == '__main__':
                 if not p.is_alive():
                     toRemove.append(p)
                     done += 1
-                    print colorizeString("%i users done so far, %i currently running" % (done, len(processes)), "DEBUG")
 
             # Push the number of quitters to tsdb
             if toRemove:
@@ -245,6 +244,8 @@ if __name__ == '__main__':
             for p in toRemove:
                 processes.remove(p)
 
+            if len(toRemove):
+                print colorizeString("%i users done so far, %i currently running" % (done, len(processes)), "DEBUG")
 
             # if work should continue, add users to keep process list full
             userIncrement = 0
