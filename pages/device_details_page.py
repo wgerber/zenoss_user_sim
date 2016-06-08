@@ -1,7 +1,7 @@
 import traceback
 from common import *
 
-MAX_RETRIES = 5
+MAX_RETRIES = 2
 
 locator = {'navBtns': '#deviceDetailNav-body table .x-grid-row',
            "deviceDetailNav": "#deviceDetailNav",
