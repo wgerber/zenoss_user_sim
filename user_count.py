@@ -2,6 +2,11 @@ import time, requests, json, argparse
 
 from common import *
 
+# disable warnings when posting to our tsdb
+# with self-signed cert
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Count users in a simuation")
     parser.add_argument("-u", "--url",

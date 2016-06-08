@@ -17,7 +17,7 @@ logdir="$(pwd)/log"
 user="zenny"
 workflows="MonitorEvents, InvestigateDevice, MonitorDashboard, InvestigateDevice, MonitorDevices"
 simId="dockerSim$RANDOM"
-duration=60
+duration=900
 
 docker run --privileged \
     -v "$logdir":/root/log \

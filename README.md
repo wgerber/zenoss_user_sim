@@ -4,7 +4,7 @@ This tool simulators user actions against the Zenoss UI. It also provides conven
 ## Usage
 A Dockerfile is included that will build an image which can point simulated users at a Zenoss instance. First build the Dockerfile
 
-    docker build -t zenoss/usersim:v1 .
+    docker build -t zenoss/usersim:v2 .
 
 Once the build is complete, the image can be launched and command line arguments passed in via sim.sh
 
@@ -19,7 +19,7 @@ Or if you prefer, you can wrangle absurdly long commands like this:
         -v $(pwd)/log:/root/log \
         -v /dev/shm:/dev/shm \
         -v /etc/hosts:/etc/hosts \
-        zenoss/usersim:v1 \
+        zenoss/usersim:v2 \
         -u https://zenoss5.graveyard.zenoss.loc \
         -n zenny \
         -p **** \
@@ -46,7 +46,7 @@ To run directly in python, install dependencies (`Xvfb` and `chromedriver` for t
         --workflows="MonitorEvents, InvestigateDevice, MonitorDashboard, InvestigateDevice, MonitorDevices" \
         --leader
 
-For configuration options, try `python sim.py --help` or `docker run zenoss/usersim:v1`.
+For configuration options, try `python sim.py --help` or `docker run zenoss/usersim:v2`.
 
 ## Tell me more!
 Zenoss User Simulator is similar to a functional test runner, but aims to perform specific tasks and workflows at a more general level rather than verify that specific details behave in an expected way. A **User** is given a list of **Workflows** to perform. Each Workflow interacts with one or more **Pages**. Pages know precisely how to accomplish a task, and push results to opentsdb.

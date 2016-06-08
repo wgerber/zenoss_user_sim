@@ -14,5 +14,5 @@ def checkPageReady(user, pushActionStat):
         raise PageActionException(whoami(),
                 "could not find deviceGrid element: %s" % e.msg,
                 screen=e.screen)
-    waitTime.stop()
+    waitTimer.stop()
     elapsed.stop()

@@ -5,6 +5,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import StaleElementReferenceException, TimeoutException
 
 # just some globals is all
 DEFAULT_TIMEOUT = 60
@@ -199,5 +200,5 @@ class StatRecorder(object):
 
     def _pushStat(self, start, end, suffix=""):
         total = end - start
-        self.pushFn(self.name + suffix, self.metric, total, start)
+        #self.pushFn(self.name + suffix, self.metric, total, start)
         self.pushFn(self.name + suffix, self.metric, total, end)
