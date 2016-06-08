@@ -1,4 +1,4 @@
-import sys, random, socket
+import sys, random, socket, signal
 import time, traceback, argparse
 from xvfbwrapper import Xvfb
 import multiprocessing as mp
@@ -161,6 +161,9 @@ def countUser(tsdbUrl, startTime, endTime):
 # aggregate result data
 # TODO - this can go away when these stats are pushed to tsdb
 def processResults(results, userCount, duration):
+    if userCount == 0 or len(userResults) == 0:
+        return
+
     r = {
         "failed": 0,
         "complete": 0}
@@ -185,6 +188,7 @@ names = ["Griggs_of_Vinheim", "Blacksmith_Rickert_of_Vinheim", "Big_Hat_Logan", 
         "Iron_Knight_Tarkus", "Havel_The_Rock", "Oscar_of_Astora", "Chaos_Servant", "Prince_Ricard"]
 
 if __name__ == '__main__':
+
     try:
         args = parse_args()
 
@@ -309,10 +313,17 @@ if __name__ == '__main__':
         tsdbQueue.close()
         tsdbQueue.join_thread()
         endTime = time.time()
+
+        # kill any remaining processes
+        for p in processes:
+            p.terminate()
         print colorizeString("all processes have exited", "DEBUG")
+
+        # log some stats
         print colorizeString("start: %s, end: %s" % \
                 (time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(startTime)),
                     time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(endTime))), "DEBUG")
         processResults(userResults, args.users, endTime - startTime)
+
         if args.leader:
             countUser(args.tsdbUrl, startTime, endTime)
