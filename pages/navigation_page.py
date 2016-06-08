@@ -1,4 +1,3 @@
-import traceback
 from common import *
 from pages import DashboardPage, InfrastructurePage
 

@@ -1,7 +1,4 @@
-import traceback
 from common import *
-
-MAX_RETRIES = 2
 
 elements = {
     "deviceGrid": "#device_grid"}

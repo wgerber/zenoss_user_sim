@@ -3,12 +3,12 @@ from functools import wraps
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, StaleElementReferenceException
 
+# just some globals is all
 DEFAULT_TIMEOUT = 60
+MAX_RETRIES = 2
 
 class assertPage(object):
     def __init__(self, attr, expected):

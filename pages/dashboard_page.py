@@ -1,4 +1,3 @@
-import time, traceback
 from common import *
 
 TITLE = 'Zenoss: Dashboard'
