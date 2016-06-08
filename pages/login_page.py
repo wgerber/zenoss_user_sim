@@ -8,16 +8,18 @@ locator = {"loginField": "#username",
 
 @assertPageAfter('title', 'Zenoss: Dashboard')
 def login(user, pushActionStat, url, username, password):
-    start = time.time()
+    elapsed = StatRecorder(pushActionStat, whoami(), "elapsedTime");
+    waitTimer = StatRecorder(pushActionStat, whoami(), "waitTime");
+    elapsed.start()
+    waitTimer.start()
     try:
         user.driver.get(url)
     except Exception as e:
         raise PageActionException(whoami(),
                 "could not navigate to %s because %s" % (url, e.msg),
                 screen=e.screen)
-    pushActionStat(whoami() + "_getUrl", 'waitTime', time.time() - start, start)
+    waitTimer.push("_getUrl")
 
-    start = time.time()
     try:
         login_field = find(user.driver, locator["loginField"])
         pass_field = find(user.driver, locator["passField"])
@@ -26,7 +28,7 @@ def login(user, pushActionStat, url, username, password):
         raise PageActionException(whoami(),
                 "unexpected failure logging in to %s: %s" % (url, e.msg),
                 screen=e.screen)
-    pushActionStat(whoami() + "_findFormElements", 'waitTime', time.time() - start, start)
+    waitTimer.push("_findElements")
 
     try:
         login_field.send_keys(username)
@@ -40,4 +42,6 @@ def login(user, pushActionStat, url, username, password):
         raise PageActionException(whoami(),
                 "unexpected failure in logging in to %s: %s" % (url, e.msg),
                 screen=e.screen)
-    pushActionStat(whoami() + "_submitAndNavigate", 'waitTime', time.time() - start, start)
+
+    waitTimer.stop("_submitAndNavigate")
+    elapsed.stop()

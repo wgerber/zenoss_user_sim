@@ -187,13 +187,17 @@ class StatRecorder(object):
     def start(self):
         self.startTime = time.time()
 
-    def stop(self):
+    def stop(self, suffix=""):
+        """ stops AND pushes """
         if not self.startTime:
             return
-        self._pushStat(self.startTime, time.time())
+        self._pushStat(self.startTime, time.time(), suffix=suffix)
         self.startTime = None
 
-    def _pushStat(self, start, end):
+    def push(self, suffix=""):
+        self._pushStat(self.startTime, time.time(), suffix=suffix)
+
+    def _pushStat(self, start, end, suffix=""):
         total = end - start
-        self.pushFn(self.name, self.metric, total, start)
-        self.pushFn(self.name, self.metric, total, end)
+        self.pushFn(self.name + suffix, self.metric, total, start)
+        self.pushFn(self.name + suffix, self.metric, total, end)

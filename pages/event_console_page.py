@@ -22,9 +22,10 @@ elements = {"severityBtn": "#events_grid-filter-severity-btnEl",
 def filterBySeverity(user, pushActionStat, severity):
     severities = ["critical", "error", "warning", "info", "debug", "clear"]
 
-    actionStart = time.time()
-
-    start = time.time()
+    waitTimer = StatRecorder(pushActionStat, whoami(), "waitTime");
+    elapsed = StatRecorder(pushActionStat, whoami(), "elapsedTime");
+    elapsed.start()
+    waitTimer.start()
     try:
         find(user.driver, elements["severityBtn"]).click()
     except Exception as e:
@@ -58,15 +59,18 @@ def filterBySeverity(user, pushActionStat, severity):
         eventsTable = find(user.driver, elements["eventsTable"])
         wait(user.driver, EC.staleness_of(eventsTable))
 
-    waitTime = time.time() - actionStart
-    pushActionStat(whoami(), 'waitTime', waitTime, actionStart)
+    waitTimer.stop()
+    elapsed.stop()
 
 @assertPage('title', TITLE)
 def sortByLastSeen(user, pushActionStat, newSortDir):
     newSortDir = "ASC" if newSortDir == "ascending" else "DESC"
     sortDir = None
 
-    start = time.time()
+    waitTimer = StatRecorder(pushActionStat, whoami(), "waitTime");
+    elapsed = StatRecorder(pushActionStat, whoami(), "elapsedTime");
+    elapsed.start()
+    waitTimer.start()
 
     # TODO - break this after n seconds
     while sortDir != newSortDir:
@@ -82,13 +86,16 @@ def sortByLastSeen(user, pushActionStat, newSortDir):
         # wait until event table updates
         wait(user.driver, EC.staleness_of(eventsTable))
 
-    waitTime = time.time() - start
-    pushActionStat(whoami(), 'waitTime', waitTime, start)
+    waitTimer.stop()
+    elapsed.stop()
 
 @assertPage('title', TITLE)
 def getEvents(user):
-    actionStart = time.time()
     eventRows = []
+    waitTimer = StatRecorder(pushActionStat, whoami(), "waitTime");
+    elapsed = StatRecorder(pushActionStat, whoami(), "elapsedTime");
+    elapsed.start()
+    waitTimer.start()
     try:
         eventRows = findMany(user.driver, elements["eventRows"])
     # we can timeout because there are no event rows,
@@ -120,7 +127,7 @@ def getEvents(user):
             event[colName] = val
         events.append(event)
 
-    waitTime = time.time() - actionStart
-    pushActionStat(whoami(), 'waitTime', waitTime, actionStart)
+    waitTimer.stop()
+    elapsed.stop()
 
     return events
