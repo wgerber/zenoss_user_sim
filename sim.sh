@@ -2,6 +2,7 @@
 
 count=$1
 pass=$2
+simId=${3:-"dockerSim$RANDOM"}
 
 if [ -z $count ]; then
     echo "missing simulated user count";
@@ -16,7 +17,6 @@ fi
 logdir="$(pwd)/log"
 user="zenny"
 workflows="MonitorEvents, InvestigateDevice, MonitorDashboard, InvestigateDevice, MonitorDevices"
-simId="dockerSim$RANDOM"
 duration=900
 
 docker run --privileged \
