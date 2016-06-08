@@ -1,4 +1,3 @@
-import traceback
 from common import *
 from pages import DashboardPage, InfrastructurePage
 
@@ -10,7 +9,10 @@ locator = {'events': '#Events-nav-button',
 @retry(3)
 @assertPageAfter('title', 'Zenoss: Events')
 def goToEventConsole(user, pushActionStat):
-    start = time.time()
+    waitTimer = StatRecorder(pushActionStat, whoami(), "waitTime");
+    elapsed = StatRecorder(pushActionStat, whoami(), "elapsedTime");
+    waitTimer.start()
+    elapsed.start()
     try:
         find(user.driver, locator['events']).click()
     except Exception as e:
@@ -18,13 +20,16 @@ def goToEventConsole(user, pushActionStat):
                 "unexpected failure navigating to event console: %s" % e.msg,
                 screen=e.screen)
     # TODO - make sure page is loaded/ready
-    waitTime = time.time() - start
-    pushActionStat(whoami(), 'waitTime', waitTime, start)
+    waitTimer.stop()
+    elapsed.stop()
 
 @retry(3)
 @assertPageAfter('title', 'Zenoss: Dashboard')
 def goToDashboard(user, pushActionStat):
-    start = time.time()
+    waitTimer = StatRecorder(pushActionStat, whoami(), "waitTime");
+    elapsed = StatRecorder(pushActionStat, whoami(), "elapsedTime");
+    waitTimer.start()
+    elapsed.start()
     try:
         find(user.driver, locator['dashboardLink']).click()
     except Exception as e:
@@ -34,13 +39,16 @@ def goToDashboard(user, pushActionStat):
 
     DashboardPage.checkPageReady(user, pushActionStat)
 
-    waitTime = time.time() - start
-    pushActionStat(whoami(), 'waitTime', waitTime, start)
+    waitTimer.stop()
+    elapsed.stop()
 
 @retry(3)
 @assertPageAfter('title', 'Zenoss: Devices')
 def goToDevicesPage(user, pushActionStat):
-    start = time.time()
+    waitTimer = StatRecorder(pushActionStat, whoami(), "waitTime");
+    elapsed = StatRecorder(pushActionStat, whoami(), "elapsedTime");
+    waitTimer.start()
+    elapsed.start()
     try:
         find(user.driver, locator['infrastructure']).click()
     except Exception as e:
@@ -50,12 +58,15 @@ def goToDevicesPage(user, pushActionStat):
 
     InfrastructurePage.checkPageReady(user, pushActionStat)
 
-    waitTime = time.time() - start
-    pushActionStat(whoami(), 'waitTime', waitTime, start)
+    waitTimer.stop()
+    elapsed.stop()
 
 @assertPageAfter('title', 'Login')
 def logout(user, pushActionStat):
-    start = time.time()
+    waitTimer = StatRecorder(pushActionStat, whoami(), "waitTime");
+    elapsed = StatRecorder(pushActionStat, whoami(), "elapsedTime");
+    waitTimer.start()
+    elapsed.start()
     try:
         find(user.driver, locator['logoutLink']).click()
     except Exception as e:
@@ -63,5 +74,5 @@ def logout(user, pushActionStat):
                 "unexpected failure during logout: %s" % e.msg,
                 screen=e.screen)
     # TODO - make sure page is loaded/ready
-    waitTime = time.time() - start
-    pushActionStat(whoami(), 'waitTime', waitTime, start)
+    waitTimer.stop()
+    elapsed.stop()

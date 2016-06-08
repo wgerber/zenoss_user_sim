@@ -25,8 +25,7 @@ class InvestigateDevice(Workflow):
         user.think(3)
         DeviceDetailsPage.interactWithDeviceGraphs(user, pushActionStat)
 
-        # TODO - contribute to wait?
-        componentNames = DeviceDetailsPage.getComponentNames(user)
+        componentNames = DeviceDetailsPage.getComponentNames(user, pushActionStat)
         for name in componentNames:
             DeviceDetailsPage.viewComponentDetails(user, pushActionStat, name)
 

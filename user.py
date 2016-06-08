@@ -17,7 +17,8 @@ GODLIKE = 0
 REDDIT_TIME = 2
 
 class User(object):
-    def __init__(self, name, url, username, password, skill=INTERMEDIATE, logDir="", chromedriver=None, duration=0, tsdbQueue = None, simId = ''):
+    def __init__(self, name, url, username, password, skill=INTERMEDIATE, logDir="", chromedriver=None,
+            tsdbQueue = None, resultsQueue=None, quitQueue=None, simId = ''):
         self.name = name
         self.url = url
         self.username = username
@@ -34,11 +35,12 @@ class User(object):
         self.results = []
         self.hasQuit = False
         self.loggedIn = False
-        self.duration = duration
         self.thinkTime = 0
         self.workflowsComplete = 0
         self.workflowsFailed = 0
         self.tsdbQueue = tsdbQueue
+        self.resultsQueue = resultsQueue
+        self.quitQueue = quitQueue
         self.simId = simId
 
     # perform a workflow and handle any exceptions it may raise
@@ -51,30 +53,38 @@ class User(object):
             self.log("workflow failed: %s %s" % (workflow.name, str(e)),
                     severity="ERROR")
             self.log(traceback.format_exc(sys.exc_info()[2]), severity="ERROR")
-            self.workflowsFailed += 1
             # TODO - save e.screen
         except PageActionException as e:
             self.log("workflow failed: %s:%s %s" % (workflow.name, e.actionName, str(e)),
                     severity="ERROR")
             self.log(traceback.format_exc(sys.exc_info()[2]), severity="ERROR")
-            self.workflowsFailed += 1
             # TODO - save e.screen
         except WebDriverException as e:
             self.log("workflow %s failed with uncaught WebDriverException: %s" % (workflow.name, str(e)),
                     severity="ERROR")
             self.log(traceback.format_exc(sys.exc_info()[2]), severity="ERROR")
-            self.workflowsFailed += 1
             # TODO - save e.screen
         except KeyboardInterrupt:
             self.log("workflow %s failed due to KeyboardInterrupt" % workflow.name,
                     severity="ERROR")
-            self.workflowsFailed += 1
             raise
         except Exception as e:
             self.log("workflow %s failed with uncaught error: %s" % (workflow.name, str(e)),
                     severity="ERROR")
             self.log(traceback.format_exc(sys.exc_info()[2]), severity="ERROR")
-            self.workflowsFailed += 1
+        finally:
+            if success:
+                self.workflowsComplete += 1
+                # TODO - gooder message format
+                self.resultsQueue.put({
+                    "user": self.name,
+                    "workflow": "complete"})
+            else:
+                self.workflowsFailed += 1
+                # TODO - gooder message format
+                self.resultsQueue.put({
+                    "user": self.name,
+                    "workflow": "failed"})
         return success
 
     def work(self):
@@ -95,7 +105,7 @@ class User(object):
 
         while(atWork):
             for workflow in self.workflows[1:-1]:
-		self.log("I've worked for %is of my total %is" % (time.time() - start, self.duration))
+		self.log("I've worked for %is" % (time.time() - start))
                 self.log("beginning workflow %s" % workflow.name)
                 pushActionStat = getPushActionStat(self.tsdbQueue, self.name, workflow.name, self.simId)
 
@@ -107,14 +117,14 @@ class User(object):
                         "workflow %s(#%i) successful"
                         % (workflow.name, self.workflowsComplete))
 
-                    self.workflowsComplete += 1
 
                 # take a reddit break
                 time.sleep(REDDIT_TIME)
 
                 # is it quittin time?
-                if time.time() - start > self.duration:
-                    self.log("It's quittin time after %is (%is total)" %(time.time() - start, self.duration),
+                if not self.quitQueue.empty():
+                #if time.time() - start > self.duration:
+                    self.log("It's quittin time after %is" % (time.time() - start),
 			severity="DEBUG")
                     atWork = False
                     break

@@ -3,12 +3,13 @@ from functools import wraps
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, StaleElementReferenceException
+from selenium.common.exceptions import StaleElementReferenceException, TimeoutException
 
-DEFAULT_TIMEOUT = 120
+# just some globals is all
+DEFAULT_TIMEOUT = 60
+MAX_RETRIES = 2
 
 class assertPage(object):
     def __init__(self, attr, expected):
@@ -187,13 +188,17 @@ class StatRecorder(object):
     def start(self):
         self.startTime = time.time()
 
-    def stop(self):
-        if not self.lastTime:
+    def stop(self, suffix=""):
+        """ stops AND pushes """
+        if not self.startTime:
             return
-        end = ts()
-        self._pushStat(self.startTime - end, self.startTime, end)
+        self._pushStat(self.startTime, time.time(), suffix=suffix)
         self.startTime = None
 
-    def _pushStat(self, total, start, end):
-        self.pushFn(self.name, self.metric, total, start)
-        self.pushFn(self.name, self.metric, total, end)
+    def push(self, suffix=""):
+        self._pushStat(self.startTime, time.time(), suffix=suffix)
+
+    def _pushStat(self, start, end, suffix=""):
+        total = end - start
+        #self.pushFn(self.name + suffix, self.metric, total, start)
+        self.pushFn(self.name + suffix, self.metric, total, end)

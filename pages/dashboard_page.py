@@ -1,4 +1,3 @@
-import time, traceback
 from common import *
 
 TITLE = 'Zenoss: Dashboard'
@@ -7,12 +6,15 @@ locator = {'header': '#header',
 
 @assertPage('title', TITLE)
 def checkPageReady(user, pushActionStat):
-    start = time.time()
+    waitTimer = StatRecorder(pushActionStat, whoami(), "waitTime");
+    elapsed = StatRecorder(pushActionStat, whoami(), "elapsedTime");
+    elapsed.start()
+    waitTimer.start()
     try:
         find(user.driver, locator["appPortal"])
     except Exception as e:
         raise PageActionException(whoami(),
                 "could not find appPortal element: %s" % e.msg,
                 screen=e.screen)
-    waitTime = time.time() - start
-    pushActionStat(whoami(), 'waitTime', waitTime, start)
+    waitTimer.stop()
+    elapsed.stop()
