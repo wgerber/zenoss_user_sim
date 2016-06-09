@@ -16,9 +16,14 @@ class InvestigateDevice(Workflow):
         if not user.loggedIn:
             raise WorkflowException(whoami(), "user is not logged in")
 
-        # TODO - time this
-        user.driver.get("%s/zport/dmd/Devices/Server/Linux/devices/%s/devicedetail#deviceDetailNav:device_overview" % \
-                                (user.url, random.choice(deviceIds)))
+        devId = random.choice(deviceIds)
+        url = "%s/zport/dmd/Devices/Server/Linux/devices/%s/devicedetail#deviceDetailNav:device_overview" % \
+                (user.url, devId)
+
+        waitTimer = StatRecorder(pushActionStat, "navigateToDevice%s" % devId, "waitTime");
+        waitTimer.start()
+        user.driver.get(url)
+        waitTimer.stop()
 
         DeviceDetailsPage.checkPageReady(user, pushActionStat)
         DeviceDetailsPage.viewDeviceGraphs(user, pushActionStat)

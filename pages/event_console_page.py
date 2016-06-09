@@ -1,16 +1,9 @@
 from common import *
 
+MAX_EVENT_ROWS = 10
+
 # TODO: Differentiate EventConsole, EventArchive, etc.
 TITLE = 'Zenoss: Events'
-locator = {'severityBtn': (By.ID, 'events_grid-filter-severity-btnEl'),
-           'selectBtn': (By.ID, 'select-button-btnEl'),
-           'ackBtn': (By.ID, 'events_toolbar_ack-btnEl'),
-           'refreshBtn': (By.NAME, 'refresh-button'),
-           'allMenu': (By.ID, 'menuitem-1063-itemEl'),
-           'events': '#events_grid-body table:nth-of-type(1) .x-grid-row',
-           'eventStateElement': '.x-grid-cell-eventState',
-           'eventState': {'new': '.status-icon-small-new'}}
-
 elements = {"severityBtn": "#events_grid-filter-severity-btnEl",
             "eventsTable": "#events_grid .x-grid-table",
             "lastSeenHeader": "#lastTime",
@@ -89,15 +82,89 @@ def sortByLastSeen(user, pushActionStat, newSortDir):
     waitTimer.stop()
     elapsed.stop()
 
+@retry(MAX_RETRIES)
 @assertPage('title', TITLE)
-def getEvents(user):
+def viewEventDetails(user, pushActionStat, event):
+    eventRowEl = _getEventRowEl(user, event)
+    if not eventRowEl:
+        raise PageActionException(whoami(),
+                "could not find event row for event with id %s" % event.evid,
+                screen=user.driver.get_screenshot_as_png())
+    # TODO - double click row
+    # TODO - get details?
+    pass
+
+@retry(MAX_RETRIES)
+@assertPage('title', TITLE)
+def ackEvent(user, pushActionStat, event):
+    # TODO - select row
+    # TODO - click ack button
+    # TODO - verify update?
+    pass
+
+def addLogMessageToEvent(user, pushActionStat, event, message):
+    # TODO - viewEventDetails
+    # TODO - fill log field
+    # TODO - click add button
+    # TODO - verify added?
+    pass
+
+@retry(MAX_RETRIES)
+@assertPage('title', TITLE)
+def getEvents(user, pushActionStat):
     eventRows = []
     waitTimer = StatRecorder(pushActionStat, whoami(), "waitTime");
     elapsed = StatRecorder(pushActionStat, whoami(), "elapsedTime");
     elapsed.start()
     waitTimer.start()
+
+    eventRows = _getEventRowEls(user)
+    print "fount %i eventRows, only using first %i" % (len(eventRows), MAX_EVENT_ROWS)
+    eventRows = eventRows[:MAX_EVENT_ROWS]
+
+    events = []
     try:
-        eventRows = findMany(user.driver, elements["eventRows"])
+        for el in eventRows:
+            cells = findManyIn(el, ".x-grid-cell")
+            event = {}
+            for cell in cells:
+                colNameClass = [x for x in cell.get_attribute("class").split(" ") if x.startswith("x-grid-cell-")][0]
+                colName = colNameClass.replace("x-grid-cell-", "")
+                val = cell.text
+                # some columns require more work to get useful data
+                if colName == "eventState":
+                    eventStatusClass = findIn(cell, ".x-grid-cell-inner div:nth-of-type(1)").get_attribute("class")
+                    val = eventStatusClass.split("-")[-1]
+                elif colName == "severity":
+                    severityStatusClass = findIn(cell, ".severity-icon-small").get_attribute("class")
+                    val = severityStatusClass.split(" ")[-1]
+                    pass
+                event[colName] = val
+            events.append(event)
+    except StaleElementReferenceException:
+        raise PageActionException(whoami(),
+                "hit stale element while getting events",
+                screen=user.driver.get_screenshot_as_png())
+
+    waitTimer.stop()
+    elapsed.stop()
+    return events
+
+def _getEventRowEl(user, event):
+    """ given an event dict, finds first matching event row el"""
+    eventRows = _getEventRowEls(user)
+    for eventRow in eventRows:
+        # NOTE: assumes event id column is visible
+        idCell = findIn(eventRow, ".x-grid-cell-evid")
+        if idCell.text == event.evid:
+            return eventRow
+    return None
+
+
+def _getEventRowEls(user):
+    """ finds all event row elements """
+    try:
+        return findMany(user.driver, elements["eventRows"])
     # we can timeout because there are no event rows,
     # or we can timeout because the UI is slow to respond
     except TimeoutException:
@@ -108,26 +175,3 @@ def getEvents(user):
                     "timed out waiting for event rows",
                     screen=user.driver.get_screenshot_as_png())
 
-    events = []
-    for el in eventRows:
-        cells = findManyIn(el, ".x-grid-cell")
-        event = {}
-        for cell in cells:
-            colNameClass = [x for x in cell.get_attribute("class").split(" ") if x.startswith("x-grid-cell-")][0]
-            colName = colNameClass.replace("x-grid-cell-", "")
-            val = cell.text
-            # some columns require more work to get useful data
-            if colName == "eventState":
-                eventStatusClass = findIn(cell, ".x-grid-cell-inner div:nth-of-type(1)").get_attribute("class")
-                val = eventStatusClass.split("-")[-1]
-            elif colName == "severity":
-                severityStatusClass = findIn(cell, ".severity-icon-small").get_attribute("class")
-                val = eventStatusClass.split(" ")[-1]
-                pass
-            event[colName] = val
-        events.append(event)
-
-    waitTimer.stop()
-    elapsed.stop()
-
-    return events
