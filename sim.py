@@ -127,12 +127,14 @@ def pushToTsdb(url, queue):
     headers={'Content-type': 'application/json', 'Accept': 'text/plain'}
     if data:
         r = requests.post(
-                url + "/api/put",
+                url + "/api/put?details",
                 data=json.dumps(data), headers=headers, verify=False)
-        if r.status_code != 204:
-            print "Failed to post %i datapoints to tsdb: %i" % (len(data), r.status_code)
-        else:
+        if r.ok:
             print "Posted %i datapoints to tsdb, %i left in queue" % (len(data), queue.qsize())
+        else:
+            print colorizeString("Failed to post %i datapoints to tsdb: %i" % (len(data), r.status_code), 'ERROR')
+            for error in r.json()['errors']:
+                print error['error']
 
 def countUser(tsdbUrl, startTime, endTime):
     headers={'Content-type': 'application/json', 'Accept': 'text/plain'}
@@ -184,7 +186,7 @@ names = ["Griggs_of_Vinheim", "Blacksmith_Rickert_of_Vinheim", "Big_Hat_Logan", 
         "Knight_Lautrec_Of_Carim", "Oswald_of_Carim", "Alvina_of_the_Darkroot_Wood", "Shiva_of_the_East", "Domhnall_of_Zena", "Quelaan",
         "Siegmeyer_of_Catarina", "Crestfallen_Merchant", "Ingward", "Darkstalker_Kaathe", "Darkmoon_Knightess", "Gwynevere", "Gwyndolin",
         "Giant_Blacksmith", "Crossbreed_Priscilla", "Blacksmith_Vamos", "Patches_the_Hyena", "Sieglinde_of_Catarina", "Elizabeth", "Marvelous_Chester",
-        "Lord's_Blade_Ciaran", "Hawkeye_Gough", "Maneater_Mildred", "Witch_Beatrice", "King_Jeremiah", "Knight_Kirk", "Paladin_Leeroy",
+        "Hawkeye_Gough", "Maneater_Mildred", "Witch_Beatrice", "King_Jeremiah", "Knight_Kirk", "Paladin_Leeroy",
         "Iron_Knight_Tarkus", "Havel_The_Rock", "Oscar_of_Astora", "Chaos_Servant", "Prince_Ricard"]
 
 if __name__ == '__main__':
