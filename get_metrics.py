@@ -90,16 +90,22 @@ class MetricAnalyzer(object):
         summary["max"] = self.df['value'].max()
         summary["mean"] = self.df['value'].mean()
         summary["count"] = self.df['value'].count()
+        summary['std'] = self.df['value'].std()
         return summary
 
     def print_metric_summary(self):
         summary = self.get_summary()
-        format_text = "Metric {0} => count: {1}  |  min: {2}  |  max:{3}  |  mean:{4}"
+        format_text = ("Metric {0} => "
+                       "count: {1}  |  min: {2}  |  max:{3}  |  mean:{4}  |  "
+                       "std:{5}")
         count_text = "{0}".format(summary.get("count")).rjust(10)
         min_text = "{0:0.4f}".format(summary.get("min")).rjust(10)
         max_text = "{0:0.4f}".format(summary.get("max")).rjust(10)
         mean_text = "{0:0.4f}".format(summary.get("mean")).rjust(10)
-        log.info(format_text.format(self.metric_name.rjust(20), count_text, min_text, max_text, mean_text))
+        stdev_text = "{0:0.4f}".format(summary.get("std")).rjust(10)
+        log.info(format_text.format(
+            self.metric_name.rjust(20), count_text, min_text, max_text,
+            mean_text, stdev_text))
 
     def get_top_n_by(self, by_col, cols, n=25, df=None):
         if df is None:
@@ -165,6 +171,35 @@ class WaitTimeMetricAnalyzer(MetricAnalyzer):
         super(WaitTimeMetricAnalyzer, self).__init__(metric_name, datapoints)
 
 
+
+    def print_by_action(self):
+        grouped = self.df.groupby('action')['value']
+        log.info('')
+        log.info('{:^75}'.format('Group by Actions'))
+        log.info('{:^25}{:^10}{:^10}{:^10}{:^10}{:^10}'
+                .format('action', 'count', 'min', 'max', 'mean', 'std'))
+        for action, df in grouped:
+            summary = get_summary(df)
+            action_text = '{:>25}'.format(action)
+            count_text = "{0}".format(summary.get("count")).rjust(10)
+            min_text = "{0:0.4f}".format(summary.get("min")).rjust(10)
+            max_text = "{0:0.4f}".format(summary.get("max")).rjust(10)
+            mean_text = "{0:0.4f}".format(summary.get("mean")).rjust(10)
+            std_text = "{0:0.4f}".format(summary.get("std")).rjust(10)
+            log.info('{}{}{}{}{}{}'
+                    .format(action_text, count_text, min_text, max_text,
+                            mean_text, std_text))
+        log.info('')
+
+def get_summary(df):
+    summary = {}
+    summary['count'] = df.count()
+    summary['min'] = df.min()
+    summary['max'] = df.max()
+    summary['mean'] = df.mean()
+    summary['std'] = df.std()
+    return summary
+
 def _datetime_to_epoch(date_):
     date_format = '%Y/%m/%d-%H:%M:%S'
     utc = pytz.timezone("UTC")
@@ -209,6 +244,7 @@ def main(base_opentsdb_url, start, end, detailed):
     wait_time_datapoints = metric_retiever.get_datapoints(start, end, "waitTime", ["action", "user", "workflow"])
     wait_time_analyzer = WaitTimeMetricAnalyzer("waitTime", wait_time_datapoints)
     wait_time_analyzer.print_metric_summary()
+    wait_time_analyzer.print_by_action()
     if detailed:
         wait_time_analyzer.print_top_n_by("value", ["action", "user", "value"], n=50)
 
