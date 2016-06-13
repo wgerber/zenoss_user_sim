@@ -1,3 +1,5 @@
+import random
+from selenium.webdriver.common.action_chains import ActionChains
 from common import *
 
 MAX_EVENT_ROWS = 10
@@ -8,6 +10,14 @@ elements = {"severityBtn": "#events_grid-filter-severity-btnEl",
             "eventsTable": "#events_grid .x-grid-table",
             "lastSeenHeader": "#lastTime",
             "eventRows": '#events_grid-body table:nth-of-type(1) .x-grid-row',
+            "ackBtn": "#events_toolbar_ack",
+            "closeBtn": "#events_toolbar_close_events",
+            "eventDetails": "#detail_panel",
+            "eventDetailRows": ".proptable tr",
+            "eventDetailKey": ".proptable_key",
+            "eventDetailValue": ".proptable_value",
+            "logMessageInput": "#detail-logform-message-inputEl",
+            "logMessageSubmit": "#log-container button"
             }
 
 @retry(MAX_RETRIES)
@@ -85,29 +95,149 @@ def sortByLastSeen(user, pushActionStat, newSortDir):
 @retry(MAX_RETRIES)
 @assertPage('title', TITLE)
 def viewEventDetails(user, pushActionStat, event):
-    eventRowEl = _getEventRowEl(user, event)
-    if not eventRowEl:
+    waitTimer = StatRecorder(pushActionStat, whoami(), "waitTime");
+    elapsed = StatRecorder(pushActionStat, whoami(), "elapsedTime");
+    elapsed.start()
+    waitTimer.start()
+    try:
+        el = _getEventRowEl(user, event)
+        ActionChains(user.driver).double_click(el).perform()
+    except WebDriverException as e:
         raise PageActionException(whoami(),
-                "could not find event row for event with id %s" % event.evid,
-                screen=user.driver.get_screenshot_as_png())
-    # TODO - double click row
-    # TODO - get details?
-    pass
+                "could not view event details for event %s: %s" % (event, e.msg),
+                screen=e.screen)
+    except Exception as e:
+        raise PageActionException(whoami(),
+                "could not view event details for event %s: %s" % (event, e.args),
+                screen=None)
+
+    try:
+        detailsEl = find(user.driver, elements["eventDetails"])
+        detailRows = findManyIn(detailsEl, elements["eventDetailRows"])
+        details = {}
+        for row in detailRows:
+            key = findIn(row, elements["eventDetailKey"]).text
+            val = findIn(row, elements["eventDetailValue"]).text
+            details[key] = val
+    except Exception as e:
+        raise PageActionException(whoami(),
+                "could not gather details for %s: %s" % (event, str(e)),
+                screen=None)
+
+    waitTimer.stop()
+    elapsed.stop()
+    return details
 
 @retry(MAX_RETRIES)
 @assertPage('title', TITLE)
 def ackEvent(user, pushActionStat, event):
-    # TODO - select row
-    # TODO - click ack button
-    # TODO - verify update?
-    pass
+    waitTimer = StatRecorder(pushActionStat, whoami(), "waitTime");
+    elapsed = StatRecorder(pushActionStat, whoami(), "elapsedTime");
+    elapsed.start()
+    waitTimer.start()
+    try:
+        _getEventRowEl(user, event).click()
+        find(user.driver, elements["ackBtn"]).click()
+    except WebDriverException as e:
+        raise PageActionException(whoami(),
+                "could not ack event %s: %s" % (event, e.msg),
+                screen=e.screen)
+    except Exception as e:
+        raise PageActionException(whoami(),
+                "could not ack event %s: %s" % (event, e),
+                screen=None)
 
-def addLogMessageToEvent(user, pushActionStat, event, message):
-    # TODO - viewEventDetails
-    # TODO - fill log field
-    # TODO - click add button
+    # TODO - verify ack was successful?
+    waitTimer.stop()
+    elapsed.stop()
+
+@retry(MAX_RETRIES)
+@assertPage('title', TITLE)
+def closeEvent(user, pushActionStat, event):
+    waitTimer = StatRecorder(pushActionStat, whoami(), "waitTime");
+    elapsed = StatRecorder(pushActionStat, whoami(), "elapsedTime");
+    elapsed.start()
+    waitTimer.start()
+    try:
+        _getEventRowEl(user, event).click()
+        find(user.driver, elements["closeBtn"]).click()
+    except WebDriverException as e:
+        raise PageActionException(whoami(),
+                "could not close event %s: %s" % (event, e.msg),
+                screen=e.screen)
+    except Exception as e:
+        raise PageActionException(whoami(),
+                "could not close event %s: %s" % (event, e),
+                screen=None)
+
+    # TODO - verify ack was successful?
+    waitTimer.stop()
+    elapsed.stop()
+
+@retry(MAX_RETRIES)
+@assertPage('title', TITLE)
+def addLogMessageToEvent(user, pushActionStat, event, message=None):
+    messages = [
+            "Three men were swept up by the flabby claws before anybody turned",
+            "The stars were right again, and ravening for delight.",
+            "There is a sense of spectral whirling through liquid gulfs of infinity, of dizzying rides through reeling universes on a comets tail, and of hysterical plunges from the newly opened depths was intolerable, and at length the quick-eared Hawkins thought he heard a nasty, slopping sound down there.",
+            "Parker slipped as the Alert under way.",
+            "Steam had not given out yet.",
+            "In this phantasy of prismatic distortion it moved anomalously in a diagonal way, so that all the rules of matter and perspective seemed upset.",
+            "- the scattered plasticity of that charnel shore that was not of earth the titan Thing from the stars slavered and gibbered like Polypheme cursing the fleeing ship of Odysseus.",
+            "The Thing of the clouds about his consciousness.",
+            "Everyone listened, and everyone was listening still when It lumbered slobberingly into sight and gropingly squeezed Its gelatinous green immensity through the black doorway into the shrunken and gibbous sky on flapping membraneous wings.",
+            "A mountain walked or stumbled.",
+            "Knowing that the chronicler could not put on paper.",
+            "There was a bursting as of an exploding bladder, a slushy nastiness as of a daemon galleon.",
+            "Death would be a boon if only it could blot out the memories.",
+            "The stars were right again, and ravening for delight.",
+            "Everyone listened, and everyone watched the queer recession of the distorted, hilarious elder gods and the green, sticky spawn of the stars, had awaked to claim his own.",
+            "There was a mighty eddying and foaming in the cabin whilst Johansen was wandering deliriously.",
+            "Then came the storm of April 2nd, and a sound that the chronicler could not put on paper.",
+            "the scattered plasticity of that dream came rescue-the Vigilant, the vice-admiralty court, the streets of Dunedin, and the laughing maniac by his side.",
+            "The Thing of the distorted, hilarious elder gods and the green, bat-winged mocking imps of Tartarus."]
+    if not message:
+        message = random.choice(messages)
+
+    # TODO - only call this if event details are not visible
+    viewEventDetails(user, pushActionStat, event)
+    try:
+        message = "I investigated this event and found the problem was %s" % message
+        find(user.driver, elements["logMessageInput"]).send_keys(message)
+        find(user.driver, elements["logMessageSubmit"]).click()
+    except Exception as e:
+        raise PageActionException(whoami(),
+                "could not add log message to event %s: %s" % (event, e),
+                screen=None)
     # TODO - verify added?
     pass
+
+
+@retry(MAX_RETRIES)
+@assertPage('title', TITLE)
+@assertPageAfter('url', 'zport/dmd/Devices')
+def goToEventResource(user, pushActionStat, event):
+    waitTimer = StatRecorder(pushActionStat, whoami(), "waitTime");
+    elapsed = StatRecorder(pushActionStat, whoami(), "elapsedTime");
+    elapsed.start()
+    waitTimer.start()
+    try:
+        rowEl = _getEventRowEl(user, event)
+        findIn(rowEl, ".x-grid-cell-device").click()
+    except WebDriverException as e:
+        raise PageActionException(whoami(),
+                "could not click resource link for event %s: %s" % (event, e.msg),
+                screen=e.screen)
+    except Exception as e:
+        raise PageActionException(whoami(),
+                "could not click resource link for event %s: %s" % (event, e),
+                screen=None)
+
+    # TODO - verify navigate was successful?
+    waitTimer.stop()
+    elapsed.stop()
+
 
 @retry(MAX_RETRIES)
 @assertPage('title', TITLE)
@@ -156,7 +286,7 @@ def _getEventRowEl(user, event):
     for eventRow in eventRows:
         # NOTE: assumes event id column is visible
         idCell = findIn(eventRow, ".x-grid-cell-evid")
-        if idCell.text == event.evid:
+        if idCell.text == event["evid"]:
             return eventRow
     return None
 

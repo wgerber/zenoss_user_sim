@@ -3,7 +3,6 @@ import json, traceback
 
 from collections import defaultdict
 from selenium import webdriver
-from selenium.common.exceptions import WebDriverException
 
 from common import *
 
