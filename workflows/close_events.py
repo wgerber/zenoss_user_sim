@@ -10,7 +10,7 @@ class CloseEvents(Workflow):
 
         NavigationPage.goToEventConsole(user, pushActionStat)
         EventConsolePage.filterBySeverity(user, pushActionStat, "critical")
-        EventConsolePage.filterByStatus(user, pushActionStat, "new")
+        EventConsolePage.filterByStatus(user, pushActionStat, ["new", "acknowledged"])
         EventConsolePage.sortByLastSeen(user, pushActionStat, "ascending")
 
         # TODO - explicitly turn on event id column
@@ -31,9 +31,8 @@ class CloseEvents(Workflow):
 
                 EventConsolePage.addLogMessageToEvent(user, pushActionStat, event)
                 EventConsolePage.closeEvent(user, pushActionStat, event)
-                user.think(2)
+                user.think(1)
                 return
 
-        # TODO - get more events
         user.log("could not find any unacknowledged critical events");
-        user.think(2)
+        user.think(1)

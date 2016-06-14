@@ -7,6 +7,7 @@ MAX_EVENT_ROWS = 10
 # TODO: Differentiate EventConsole, EventArchive, etc.
 TITLE = 'Zenoss: Events'
 elements = {"severityBtn": "#events_grid-filter-severity-btnEl",
+            "statusBtn": "#events_grid-filter-eventState-btnEl",
             "eventsTable": "#events_grid .x-grid-table",
             "lastSeenHeader": "#lastTime",
             "eventRows": '#events_grid-body table:nth-of-type(1) .x-grid-row',
@@ -17,7 +18,8 @@ elements = {"severityBtn": "#events_grid-filter-severity-btnEl",
             "eventDetailKey": ".proptable_key",
             "eventDetailValue": ".proptable_value",
             "logMessageInput": "#detail-logform-message-inputEl",
-            "logMessageSubmit": "#log-container button"
+            "logMessageSubmit": "#log-container button",
+            "logHistory": "#evdetail_log-body table"
             }
 
 @retry(MAX_RETRIES)
@@ -53,6 +55,51 @@ def filterBySeverity(user, pushActionStat, severity):
             # if this is not checked but it should
             # be, then click it
             elif not isChecked and currentSev == severity:
+                el.click()
+                changedFilter = True
+
+    # if the filter was changed, wait for the event table
+    # to go stale
+    if changedFilter:
+        eventsTable = find(user.driver, elements["eventsTable"])
+        wait(user.driver, EC.staleness_of(eventsTable))
+
+    waitTimer.stop()
+    elapsed.stop()
+
+@retry(MAX_RETRIES)
+@assertPage('title', TITLE)
+def filterByStatus(user, pushActionStat, statuses):
+    ALL_STATUSES = ["new", "acknowledged", "suppressed", "closed", "cleared", "aged"]
+
+    waitTimer = StatRecorder(pushActionStat, whoami(), "waitTime");
+    elapsed = StatRecorder(pushActionStat, whoami(), "elapsedTime");
+    elapsed.start()
+    waitTimer.start()
+    try:
+        find(user.driver, elements["statusBtn"]).click()
+    except Exception as e:
+        raise PageActionException(whoami(),
+                "could not find status button: %s" % e.msg,
+                screen=e.screen)
+
+    # NOTE - assumes just one x-menu is visible
+    sevEls = findMany(user.driver, ".x-menu .x-menu-item")
+
+    changedFilter = False
+    for el in sevEls:
+        currentStatus = el.text.strip().lower()
+        # ensure this is an actual status menu item
+        if currentStatus in ALL_STATUSES:
+            isChecked = False if ("unchecked" in el.get_attribute("class")) else True
+            # if this is checked and it should not be,
+            # click it to uncheck it
+            if isChecked and currentStatus not in statuses:
+                el.click()
+                changedFilter = True
+            # if this is not checked but it should
+            # be, then click it
+            elif not isChecked and currentStatus in statuses:
                 el.click()
                 changedFilter = True
 
@@ -200,19 +247,29 @@ def addLogMessageToEvent(user, pushActionStat, event, message=None):
     if not message:
         message = random.choice(messages)
 
+    waitTimer = StatRecorder(pushActionStat, whoami(), "waitTime");
+    elapsed = StatRecorder(pushActionStat, whoami(), "elapsedTime");
+    elapsed.start()
+    waitTimer.start()
+
     # TODO - only call this if event details are not visible
     viewEventDetails(user, pushActionStat, event)
+    logHistoryEl = None
     try:
         message = "I investigated this event and found the problem was %s" % message
+        logHistoryEl = find(user.driver, elements["logHistory"])
         find(user.driver, elements["logMessageInput"]).send_keys(message)
         find(user.driver, elements["logMessageSubmit"]).click()
     except Exception as e:
         raise PageActionException(whoami(),
                 "could not add log message to event %s: %s" % (event, e),
                 screen=None)
-    # TODO - verify added?
-    pass
 
+    # wait till log history is updated with new log message
+    wait(user.driver, EC.staleness_of(logHistoryEl))
+
+    waitTimer.stop()
+    elapsed.stop()
 
 @retry(MAX_RETRIES)
 @assertPage('title', TITLE)
@@ -245,18 +302,22 @@ def getEvents(user, pushActionStat):
     eventRows = []
     waitTimer = StatRecorder(pushActionStat, whoami(), "waitTime");
     elapsed = StatRecorder(pushActionStat, whoami(), "elapsedTime");
-    elapsed.start()
-    waitTimer.start()
 
-    eventRows = _getEventRowEls(user)
-    print "fount %i eventRows, only using first %i" % (len(eventRows), MAX_EVENT_ROWS)
-    eventRows = eventRows[:MAX_EVENT_ROWS]
+    currEventRow = find(user.driver, elements["eventRows"])
+    nextEventRow = None
 
-    events = []
-    try:
-        for el in eventRows:
-            cells = findManyIn(el, ".x-grid-cell")
-            event = {}
+    # measure only how long it takes to find the first row.
+    # all subsequent row lookups are just selenium/chrome
+    # queries we dont care about
+    waitTimer.stop()
+    elapsed.stop()
+
+    # TODO - while there are event rows
+    while(True):
+        currEvent = {}
+        try:
+            # create event dict
+            cells = findManyIn(currEventRow, ".x-grid-cell")
             for cell in cells:
                 colNameClass = [x for x in cell.get_attribute("class").split(" ") if x.startswith("x-grid-cell-")][0]
                 colName = colNameClass.replace("x-grid-cell-", "")
@@ -269,16 +330,22 @@ def getEvents(user, pushActionStat):
                     severityStatusClass = findIn(cell, ".severity-icon-small").get_attribute("class")
                     val = severityStatusClass.split(" ")[-1]
                     pass
-                event[colName] = val
-            events.append(event)
-    except StaleElementReferenceException:
-        raise PageActionException(whoami(),
-                "hit stale element while getting events",
-                screen=user.driver.get_screenshot_as_png())
+                currEvent[colName] = val
 
-    waitTimer.stop()
-    elapsed.stop()
-    return events
+            # get a reference to the next row for the next tick
+            nextEventRow = currEventRow.find_element_by_xpath("following-sibling::*[1]")
+            # TODO - store nextEventRow's evid so that if it goes
+            # stale, we can find it later
+        except StaleElementReferenceException:
+            raise PageActionException(whoami(),
+                    "hit stale element while getting events",
+                    screen=user.driver.get_screenshot_as_png())
+
+        yield currEvent
+
+        # hey lets do this again!
+        # TODO - ensure nextEventRow element is not stale
+        currEventRow = nextEventRow
 
 def _getEventRowEl(user, event):
     """ given an event dict, finds first matching event row el"""
@@ -289,7 +356,6 @@ def _getEventRowEl(user, event):
         if idCell.text == event["evid"]:
             return eventRow
     return None
-
 
 def _getEventRowEls(user):
     """ finds all event row elements """

@@ -128,7 +128,8 @@ def pushToTsdb(url, queue):
                 url + "/api/put?details",
                 data=json.dumps(data), headers=headers, verify=False)
         if r.ok:
-            print "Posted %i datapoints to tsdb, %i left in queue" % (len(data), queue.qsize())
+            #print "Posted %i datapoints to tsdb, %i left in queue" % (len(data), queue.qsize())
+            pass
         else:
             print colorizeString("Failed to post %i datapoints to tsdb: %i" % (len(data), r.status_code), 'ERROR')
             for error in r.json()['errors']:
