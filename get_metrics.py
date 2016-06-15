@@ -265,20 +265,22 @@ def main(base_opentsdb_url, start, end, detailed):
 
 
     """ ANALYSIS FOR WAIT TIME """
-    print_header("WAIT TIME")
     wait_time_datapoints = metric_retiever.get_datapoints(start, end, "waitTime", ["action", "user", "workflow"])
-    wait_time_analyzer = WaitTimeMetricAnalyzer("waitTime", wait_time_datapoints)
-    wait_time_analyzer.print_metric_summary()
-    wait_time_analyzer.print_by_action()
-    if detailed:
-        wait_time_analyzer.print_top_n_by("value", ["action", "user", "value"], n=50)
+    if wait_time_datapoints:
+        print_header("WAIT TIME")
+        wait_time_analyzer = WaitTimeMetricAnalyzer("waitTime", wait_time_datapoints)
+        wait_time_analyzer.print_metric_summary()
+        wait_time_analyzer.print_by_action()
+        if detailed:
+            wait_time_analyzer.print_top_n_by("value", ["action", "user", "value"], n=50)
 
     # WORKFLOW
-    print_header('WORKFLOW')
     workflow_datapoints = metric_retiever.get_datapoints(
             start, end, 'workflow', ['workflow', 'user', 'host'])
-    workflow_analyzer = WorkflowMetricAnalyzer("workflow", workflow_datapoints)
-    workflow_analyzer.print_by_workflow()
+    if workflow_datapoints:
+        print_header('WORKFLOW')
+        workflow_analyzer = WorkflowMetricAnalyzer("workflow", workflow_datapoints)
+        workflow_analyzer.print_by_workflow()
 
 
 
