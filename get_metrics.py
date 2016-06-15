@@ -48,7 +48,8 @@ class MetricRetriever(object):
             data = json.loads(resp.content)
             resp.close()
         else:
-            log.error("Error retrieving data: {0}".format(resp.text))
+            log.error("Error retrieving data: {0}"
+                    .format(resp.json()['error']['message']))
         return data
 
     def _parse_raw_datum(self, raw_datum):
@@ -170,16 +171,14 @@ class WaitTimeMetricAnalyzer(MetricAnalyzer):
     def __init__(self, metric_name, datapoints):
         super(WaitTimeMetricAnalyzer, self).__init__(metric_name, datapoints)
 
-
-
     def print_by_action(self):
         grouped = self.df.groupby('action')['value']
         log.info('')
         log.info('{:^75}'.format('Group by Actions'))
         log.info('{:^25}{:^10}{:^10}{:^10}{:^10}{:^10}'
                 .format('action', 'count', 'min', 'max', 'mean', 'std'))
-        for action, df in grouped:
-            summary = get_summary(df)
+        for action, group in grouped:
+            summary = get_summary(group)
             action_text = '{:>25}'.format(action)
             count_text = "{0}".format(summary.get("count")).rjust(10)
             min_text = "{0:0.4f}".format(summary.get("min")).rjust(10)
@@ -189,6 +188,31 @@ class WaitTimeMetricAnalyzer(MetricAnalyzer):
             log.info('{}{}{}{}{}{}'
                     .format(action_text, count_text, min_text, max_text,
                             mean_text, std_text))
+        log.info('')
+
+class WorkflowMetricAnalyzer(MetricAnalyzer):
+
+    def __init__(self, metric_name, datapoints):
+        super(WorkflowMetricAnalyzer, self).__init__(metric_name, datapoints)
+
+    def print_by_workflow(self):
+        grouped = self.df.groupby('workflow')['value']
+        log.info('')
+        log.info('{:^75}'.format('Group by Workflows'))
+        log.info('{:^25}{:^10}{:^10}'
+                .format('workflow', 'completed', 'failed'))
+        for workflow, group in grouped:
+            summary = get_summary(group)
+            workflow_text = '{:>25}'.format(workflow)
+            completed_text = "{}".format(group.value_counts()[1]).rjust(10)
+            try:
+                failed = group.value_counts()[0]
+            except KeyError:
+                failed = 0
+            failed_text = "{}".format(failed).rjust(10)
+
+            log.info('{}{}{}'
+                    .format(workflow_text, completed_text, failed_text))
         log.info('')
 
 def get_summary(df):
@@ -233,10 +257,11 @@ def main(base_opentsdb_url, start, end, detailed):
     """ ANALYSIS FOR ZREQUEST.DURATION """
     print_header("ZREQUEST.DURATION")
     request_duration_datapoints = metric_retiever.get_datapoints(start, end, "zrequest.duration", ["zope", "user", "path", "action"])
-    request_duration_analyzer = RequestDurationMetricAnalyzer("zrequest.duration", request_duration_datapoints)
-    request_duration_analyzer.print_metric_summary()
-    if detailed:
-        request_duration_analyzer.print_top_n_by("value", ["action", "path", "value"], n=1000)
+    if request_duration_datapoints:
+        request_duration_analyzer = RequestDurationMetricAnalyzer("zrequest.duration", request_duration_datapoints)
+        request_duration_analyzer.print_metric_summary()
+        if detailed:
+            request_duration_analyzer.print_top_n_by("value", ["action", "path", "value"], n=1000)
 
 
     """ ANALYSIS FOR WAIT TIME """
@@ -247,6 +272,14 @@ def main(base_opentsdb_url, start, end, detailed):
     wait_time_analyzer.print_by_action()
     if detailed:
         wait_time_analyzer.print_top_n_by("value", ["action", "user", "value"], n=50)
+
+    # WORKFLOW
+    print_header('WORKFLOW')
+    workflow_datapoints = metric_retiever.get_datapoints(
+            start, end, 'workflow', ['workflow', 'user', 'host'])
+    workflow_analyzer = WorkflowMetricAnalyzer("workflow", workflow_datapoints)
+    workflow_analyzer.print_by_workflow()
+
 
 
 # python get_metrics.py 1464285106 1464285259
