@@ -46,12 +46,10 @@ def parse_args():
             help = 'workflows to run, a comma separated string')
     parser.add_argument('--tsdb-url', dest = 'tsdbUrl', default = '',
             help = 'OpenTSDB URL')
-    parser.add_argument('--leader', dest = 'leader', action = 'store_true',
-            help = 'the leader processes additional stats')
     parser.add_argument('--simId', dest = 'simId', default = '',
             help = 'id with which all metrics from this simulation will be tagged')
 
-    parser.set_defaults(headless=True, leader=False)
+    parser.set_defaults(headless=True)
 
     # TODO - skill level
     # TODO - more sensible defaults and argument config
@@ -135,30 +133,6 @@ def pushToTsdb(url, queue):
             print colorizeString("Failed to post %i datapoints to tsdb: %i" % (len(data), r.status_code), 'ERROR')
             for error in r.json()['errors']:
                 print error['error']
-
-def countUser(tsdbUrl, startTime, endTime):
-    headers={'Content-type': 'application/json', 'Accept': 'text/plain'}
-    url = (tsdbUrl + "/api/query"
-           + '?start=' + time.strftime('%Y/%m/%d-%H:%M:%S', time.gmtime(startTime))
-           + '&end=' + time.strftime('%Y/%m/%d-%H:%M:%S', time.gmtime(endTime))
-           + '&m=zimsum:userCountDelta')
-    r = requests.get(
-            url, data=json.dumps({}), headers=headers, verify=False)
-
-    userCountDelta = r.json()[0]['dps']
-    sortedTime = sorted(userCountDelta.keys())
-    count = 0
-    data = []
-    for t in sortedTime:
-        count += userCountDelta[t]
-        data += [{'timestamp': float(t), 'metric': 'userCount', 'value': count, 'tags': {'host': socket.gethostname()}}]
-
-    r = requests.post(
-            tsdbUrl + "/api/put",
-            data=json.dumps(data), headers=headers, verify=False)
-    if not r.ok:
-        print 'Failed to post user count to tsdb'
-        print r['error']['message']
 
 # aggregate result data
 # TODO - this can go away when these stats are pushed to tsdb
@@ -326,6 +300,3 @@ if __name__ == '__main__':
                 (time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(startTime)),
                     time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(endTime))), "DEBUG")
         processResults(userResults, args.users, endTime - startTime)
-
-        if args.leader:
-            countUser(args.tsdbUrl, startTime, endTime)
