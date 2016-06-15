@@ -27,8 +27,7 @@ Or if you prefer, you can wrangle absurdly long commands like this:
         --duration 900 \
         --log-dir ./log \
         --tsdb-url https://opentsdb.graveyard \
-        --workflows="MonitorEvents, InvestigateDevice, MonitorDashboard, InvestigateDevice, MonitorDevices" \
-        --leader
+        --workflows="MonitorEvents, InvestigateDevice, MonitorDashboard, InvestigateDevice, MonitorDevices"
 
 Note that this image must be run as `privileged` and `/dev/shm` must be bindmounted for chrome to work properly. Mounting `/etc/hosts` into the image is useful because the Zenoss instance may only be reachable by hostname
 
@@ -43,8 +42,7 @@ To run directly in python, install dependencies (`Xvfb` and `chromedriver` for t
         --headless \
         --log-dir $(pwd)/log \
         --tsdb-url https://opentsdb.graveyard \
-        --workflows="MonitorEvents, InvestigateDevice, MonitorDashboard, InvestigateDevice, MonitorDevices" \
-        --leader
+        --workflows="MonitorEvents, InvestigateDevice, MonitorDashboard, InvestigateDevice, MonitorDevices"
 
 For configuration options, try `python sim.py --help` or `docker run zenoss/usersim:v2`.
 
