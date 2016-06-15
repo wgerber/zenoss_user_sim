@@ -30,6 +30,7 @@ class CloseEvents(Workflow):
                 NavigationPage.goToEventConsole(user, pushActionStat)
 
                 EventConsolePage.addLogMessageToEvent(user, pushActionStat, event)
+                # TODO - check if event is already closed
                 EventConsolePage.closeEvent(user, pushActionStat, event)
                 user.think(1)
                 return

@@ -305,6 +305,7 @@ def getEvents(user, pushActionStat):
 
     currEventRow = find(user.driver, elements["eventRows"])
     nextEventRow = None
+    nextEventRowId = None
 
     # measure only how long it takes to find the first row.
     # all subsequent row lookups are just selenium/chrome
@@ -334,6 +335,7 @@ def getEvents(user, pushActionStat):
 
             # get a reference to the next row for the next tick
             nextEventRow = currEventRow.find_element_by_xpath("following-sibling::*[1]")
+            nextEventRowId = findIn(nextEventRow, ".x-grid-cell-evid").text
             # TODO - store nextEventRow's evid so that if it goes
             # stale, we can find it later
         except StaleElementReferenceException:
@@ -344,8 +346,20 @@ def getEvents(user, pushActionStat):
         yield currEvent
 
         # hey lets do this again!
-        # TODO - ensure nextEventRow element is not stale
         currEventRow = nextEventRow
+        nextEventRow = None
+        nextEventRowId = None
+        # ensure nextEventRow element is not stale
+        try:
+            currEventRow.get_attribute("class")
+        except StaleElementReferenceException:
+            try:
+                nextEventRow = find_element_by_xpath("#events_grid-body .x-grid-row")
+            except StaleElementReferenceException:
+                raise PageActionException(whoami(),
+                        "could not find nextEventRow",
+                        screen=user.driver.get_screenshot_as_png())
+
 
 def _getEventRowEl(user, event):
     """ given an event dict, finds first matching event row el"""
