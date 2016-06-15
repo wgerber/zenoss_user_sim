@@ -17,7 +17,9 @@ elements = {"severityBtn": "#events_grid-filter-severity-btnEl",
             "eventDetailKey": ".proptable_key",
             "eventDetailValue": ".proptable_value",
             "logMessageInput": "#detail-logform-message-inputEl",
-            "logMessageSubmit": "#log-container button"
+            "logMessageSubmit": "#log-container button",
+            "logMessageSubmit": "#log-container button",
+            "logHistory": "#evdetail_log-body table"
             }
 
 @retry(MAX_RETRIES)
@@ -200,19 +202,27 @@ def addLogMessageToEvent(user, pushActionStat, event, message=None):
     if not message:
         message = random.choice(messages)
 
+    waitTimer = StatRecorder(pushActionStat, whoami(), "waitTime");
+    elapsed = StatRecorder(pushActionStat, whoami(), "elapsedTime");
+    elapsed.start()
+    waitTimer.start()
+
     # TODO - only call this if event details are not visible
     viewEventDetails(user, pushActionStat, event)
+    logHistoryEl = None
     try:
         message = "I investigated this event and found the problem was %s" % message
+        logHistoryEl = find(user.driver, elements["logHistory"])
         find(user.driver, elements["logMessageInput"]).send_keys(message)
         find(user.driver, elements["logMessageSubmit"]).click()
     except Exception as e:
         raise PageActionException(whoami(),
                 "could not add log message to event %s: %s" % (event, e),
                 screen=None)
-    # TODO - verify added?
-    pass
-
+    # wait till log history is updated with new log message
+    wait(user.driver, EC.staleness_of(logHistoryEl))
+    waitTimer.stop()
+    elapsed.stop()
 
 @retry(MAX_RETRIES)
 @assertPage('title', TITLE)

@@ -10,7 +10,6 @@ class CloseEvents(Workflow):
 
         NavigationPage.goToEventConsole(user, pushActionStat)
         EventConsolePage.filterBySeverity(user, pushActionStat, "critical")
-        EventConsolePage.filterByStatus(user, pushActionStat, "new")
         EventConsolePage.sortByLastSeen(user, pushActionStat, "ascending")
 
         # TODO - explicitly turn on event id column
