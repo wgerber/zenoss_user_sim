@@ -11,25 +11,44 @@ deviceIds = [
     '0c12b2d392', '0c4c3ea39e', '0c788959c9', '0dab93a03b', '0ddb055493', '0e044c71f9', '0f3ae314d4', '0f6963b91d', '0fa968edcc', '0fcaf100af',
     '0fd318864a', '10.171.100.93', '10.87.128.58']
 
+def doInvestigation(user, pushActionStat):
+    DeviceDetailsPage.checkPageReady(user, pushActionStat)
+    DeviceDetailsPage.viewDeviceGraphs(user, pushActionStat)
+    user.think(3)
+    DeviceDetailsPage.interactWithDeviceGraphs(user, pushActionStat)
+
+    componentNames = DeviceDetailsPage.getComponentNames(user, pushActionStat)
+    for name in componentNames:
+        DeviceDetailsPage.viewComponentDetails(user, pushActionStat, name)
+
+    # TODO - perform device command
+
 class InvestigateDevice(Workflow):
     def run(self, user, pushActionStat):
         if not user.loggedIn:
             raise WorkflowException(whoami(), "user is not logged in")
 
-        # TODO - time this
-        user.driver.get("%s/zport/dmd/Devices/Server/Linux/devices/%s/devicedetail#deviceDetailNav:device_overview" % \
-                                (user.url, random.choice(deviceIds)))
+        devId = random.choice(deviceIds)
+        url = "%s/zport/dmd/Devices/Server/Linux/devices/%s/devicedetail#deviceDetailNav:device_overview" % \
+                (user.url, devId)
 
-        DeviceDetailsPage.checkPageReady(user, pushActionStat)
-        DeviceDetailsPage.viewDeviceGraphs(user, pushActionStat)
-        user.think(3)
-        DeviceDetailsPage.interactWithDeviceGraphs(user, pushActionStat)
+        # time the navigation action
+        waitTimer = StatRecorder(pushActionStat, "navigateToDevice%s" % devId, "waitTime");
+        waitTimer.start()
+        user.driver.get(url)
+        waitTimer.stop()
 
-        componentNames = DeviceDetailsPage.getComponentNames(user, pushActionStat)
-        for name in componentNames:
-            DeviceDetailsPage.viewComponentDetails(user, pushActionStat, name)
+        doInvestigation(user, pushActionStat)
 
-        # TODO - perform device command
+        # stare at the screen REAL hard
+        user.think(8)
+
+class InvestigateCurrentDevice(Workflow):
+    def run(self, user, pushActionStat):
+        if not user.loggedIn:
+            raise WorkflowException(whoami(), "user is not logged in")
+
+        doInvestigation(user, pushActionStat)
 
         # stare at the screen REAL hard
         user.think(8)

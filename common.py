@@ -5,7 +5,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import StaleElementReferenceException, TimeoutException
+from selenium.common.exceptions import StaleElementReferenceException, TimeoutException, WebDriverException
 
 # just some globals is all
 DEFAULT_TIMEOUT = 60
@@ -38,7 +38,7 @@ class assertPageAfter(object):
     def __call__(self, f):
         @wraps(f)
         def wrapper(*args, **kwargs):
-            f(*args, **kwargs)
+            result = f(*args, **kwargs)
             if self.attr == 'title':
                 actual = args[0].driver.title
             elif self.attr == 'url':
@@ -46,6 +46,7 @@ class assertPageAfter(object):
             if not self.expected in actual:
                 raise PageActionException(whoami(),
                         'Called {}() and expected page "{}", but found page "{}".'.format(f.__name__, self.expected, actual))
+            return result
         return wrapper
 
 class retry(object):
@@ -57,12 +58,12 @@ class retry(object):
         @wraps(f)
         def wrapper(*args, **kwargs):
             try:
-                f(*args, **kwargs)
+                return f(*args, **kwargs)
             except (WorkflowException, PageActionException) as e:
                 if self.attempts < self.maxAttempts:
                     print "retrying due to %s" % e.message
                     self.attempts += 1
-                    wrapper(*args, **kwargs)
+                    return wrapper(*args, **kwargs)
                 else:
                     print "gave up retrying"
                     raise
