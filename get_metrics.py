@@ -1,4 +1,4 @@
-#import argparse
+import argparse
 import datetime
 import json
 import logging
@@ -202,7 +202,6 @@ class WorkflowMetricAnalyzer(MetricAnalyzer):
         log.info('{:^25}{:^10}{:^10}'
                 .format('workflow', 'completed', 'failed'))
         for workflow, group in grouped:
-            summary = get_summary(group)
             workflow_text = '{:>25}'.format(workflow)
             completed_text = "{}".format(group.value_counts()[1]).rjust(10)
             try:
@@ -215,13 +214,13 @@ class WorkflowMetricAnalyzer(MetricAnalyzer):
                     .format(workflow_text, completed_text, failed_text))
         log.info('')
 
-def get_summary(df):
+def get_summary(series):
     summary = {}
-    summary['count'] = df.count()
-    summary['min'] = df.min()
-    summary['max'] = df.max()
-    summary['mean'] = df.mean()
-    summary['std'] = df.std()
+    summary['count'] = series.count()
+    summary['min'] = series.min()
+    summary['max'] = series.max()
+    summary['mean'] = series.mean()
+    summary['std'] = series.std()
     return summary
 
 def _datetime_to_epoch(date_):
@@ -244,8 +243,44 @@ def parse_options():
     return vars(parser.parse_args())
 '''
 
-def main(base_opentsdb_url, start, end, detailed):
+def countUser(tsdbUrl, startTime, endTime, simId):
+    headers={'Content-type': 'application/json', 'Accept': 'text/plain'}
+    url = (tsdbUrl + "/api/query"
+           + '?start=' + startTime
+           + '&end=' + endTime
+           + '&m=zimsum:1s-sum:userCountDelta')
+    r = requests.get(
+            url, data=json.dumps({}), headers=headers, verify=False)
+    if not r.ok:
+        print colorizeString('Failed to get user count deltas from tsdb', 'ERROR')
+        print r.json()['error']['message']
 
+    try:
+        userCountDelta = r.json()[0]['dps']
+    except IndexError:
+        userCountDelta = []
+
+    if userCountDelta:
+        sortedTime = sorted(userCountDelta.keys())
+        count = 0
+        data = []
+        for t in sortedTime:
+            count += userCountDelta[t]
+            data += [{'timestamp': int(t), 'metric': 'userCount', 'value': count, 'tags':{'simId': simId}}]
+
+        bufferSize = 30 # messages
+        for i in range(len(data)/bufferSize + 1):
+            part = data[bufferSize*i:bufferSize*(i+1)]
+            r = requests.post(
+                    tsdbUrl + "/api/put",
+                    data=json.dumps(part),
+                    headers=headers, verify=False)
+
+            if not r.ok:
+                print colorizeString('Failed to post user count to tsdb', 'ERROR')
+                print r.json()['error']['message']
+
+def get_stats(base_opentsdb_url, start, end, detailed):
     start = _datetime_to_epoch(start)
     end = _datetime_to_epoch(end)
     assert start<end
@@ -282,18 +317,40 @@ def main(base_opentsdb_url, start, end, detailed):
         workflow_analyzer = WorkflowMetricAnalyzer("workflow", workflow_datapoints)
         workflow_analyzer.print_by_workflow()
 
+def main(base_opentsdb_url, start, end, simId, detailed):
+    countUser(base_opentsdb_url, start, end, simId)
+    get_stats(base_opentsdb_url, start, end, detailed)
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="Post-process a simulation result")
+    parser.add_argument("-u", "--url",
+            help="full url of OpenTSDB, e.g., https://opentsdb.graveyard")
+    parser.add_argument("-s", "--startTime",
+            help="Simulation start time in UTC, e.g., 2016/06/01-13:00:00")
+    parser.add_argument("-e", "--endTime",
+            help="Simulation end time in UTC, e.g., 2016/06/01-13:00:00")
+    parser.add_argument("-i", "--simId", default = '',
+            help="Simulation ID for tagging")
+    parser.add_argument("-d", "--detail", default = False,
+            help="Print output in detail")
+
+    args = parser.parse_args()
+
+    # TODO - pretty sure argparse can do this by default
+    # and also better
+    if not args.url:
+        raise Exception("url is required")
+    if not args.startTime:
+        raise Exception("start time is required")
+    if not args.endTime:
+        raise Exception("end time is required")
+    if not args.simId:
+        raise Exception('simulation id is required')
+    else:
+        return args
 
 # python get_metrics.py 1464285106 1464285259
 
 if __name__=="__main__":
-    BASE_URL = "https://opentsdb.graveyard"  # @TODO Hack, make configurable
-    if len(sys.argv) >= 3:
-        # make sure your timestamps are in UTC !!
-        # TODO be more flexible with start-end format '%Y-%m-%dT%H:%M:%SZ'
-        detailed = False
-        if len(sys.argv) >=4:
-            detailed = True
-        main(BASE_URL, sys.argv[1], sys.argv[2], detailed)
-
-
+    args = parse_args()
+    main(args.url, args.startTime, args.endTime, args.simId, args.detail)
