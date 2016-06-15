@@ -112,11 +112,23 @@ class User(object):
                 # perform workflow and handle exceptions
                 # TODO - catch uncaught exceptions and gracefully
                 # exit with the final "completed" report
-                if self.executeWorkflow(workflow, pushActionStat):
-                    self.log(
-                        "workflow %s(#%i) successful"
-                        % (workflow.name, self.workflowsComplete))
+                success = self.executeWorkflow(workflow, pushActionStat)
 
+                if success:
+                   self.log(
+                   "workflow %s(#%i) successful"
+                   % (workflow.name, self.workflowsComplete))
+
+                tags = {'user': self.name,
+                        'workflow': workflow.name,
+                        'host': socket.gethostname(),
+                        'simId': self.simId}
+                data = [{
+                    'timestamp': time.time(),
+                    'metric': 'workflow',
+                    'value': int(success),
+                    'tags': tags}]
+                self.tsdbQueue.put(data)
 
                 # take a reddit break
                 time.sleep(REDDIT_TIME)
