@@ -347,7 +347,7 @@ def parse_args():
             help="Simulation end time in UTC, e.g., 2016/06/01-13:00:00")
     parser.add_argument("-i", "--simId", default = '',
             help="Simulation ID for tagging")
-    parser.add_argument("-d", "--detail", default = False,
+    parser.add_argument("-d", "--detail", default = False, action = 'store_true',
             help="Print output in detail")
 
     args = parser.parse_args()
