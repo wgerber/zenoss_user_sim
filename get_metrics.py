@@ -165,6 +165,11 @@ class RequestDurationMetricAnalyzer(MetricAnalyzer):
         for val in top_n_df.values:
             log.info("{0}: {1} => {2}".format(val[0], val[1], val[2]))
 
+    def print_top_n_by_count(self, n = 20):
+        sizes = self.df.groupby('action').size()
+        countDF = (pd.DataFrame(sizes, columns = ['count'])
+                     .sort_values('count', ascending = False))
+        print countDF.head(n)
 
 class WaitTimeMetricAnalyzer(MetricAnalyzer):
 
@@ -306,7 +311,8 @@ def get_stats(base_opentsdb_url, start, end, detailed):
         request_duration_analyzer = RequestDurationMetricAnalyzer("zrequest.duration", request_duration_datapoints)
         request_duration_analyzer.print_metric_summary()
         if detailed:
-            request_duration_analyzer.print_top_n_by("value", ["action", "path", "value"], n=1000)
+            request_duration_analyzer.print_top_n_by("value", ["action", "path", "value"], n=20)
+            request_duration_analyzer.print_top_n_by_count()
 
 
     """ ANALYSIS FOR WAIT TIME """
@@ -317,7 +323,7 @@ def get_stats(base_opentsdb_url, start, end, detailed):
         wait_time_analyzer.print_metric_summary()
         wait_time_analyzer.print_by_action()
         if detailed:
-            wait_time_analyzer.print_top_n_by("value", ["action", "user", "value"], n=50)
+            wait_time_analyzer.print_top_n_by("value", ["action", "user", "value"], n=20)
 
     # WORKFLOW
     workflow_datapoints = metric_retiever.get_datapoints(
