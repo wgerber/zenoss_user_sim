@@ -252,7 +252,7 @@ def countUser(tsdbUrl, startTime, endTime, simId):
     r = requests.get(
             url, data=json.dumps({}), headers=headers, verify=False)
     if not r.ok:
-        print colorizeString('Failed to get user count deltas from tsdb', 'ERROR')
+        print 'Failed to get user count deltas from tsdb'
         print r.json()['error']['message']
 
     try:
@@ -277,7 +277,7 @@ def countUser(tsdbUrl, startTime, endTime, simId):
                     headers=headers, verify=False)
 
             if not r.ok:
-                print colorizeString('Failed to post user count to tsdb', 'ERROR')
+                print 'Failed to post user count to tsdb'
                 print r.json()['error']['message']
 
 def get_stats(base_opentsdb_url, start, end, detailed):
