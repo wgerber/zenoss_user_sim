@@ -197,21 +197,31 @@ class WorkflowMetricAnalyzer(MetricAnalyzer):
 
     def print_by_workflow(self):
         grouped = self.df.groupby('workflow')['value']
+        sum_completed = 0
+        sum_failed = 0
         log.info('')
         log.info('{:^75}'.format('Group by Workflows'))
         log.info('{:^25}{:^10}{:^10}'
                 .format('workflow', 'completed', 'failed'))
         for workflow, group in grouped:
             workflow_text = '{:>25}'.format(workflow)
-            completed_text = "{}".format(group.value_counts()[1]).rjust(10)
+            try:
+                completed =  group.value_counts()[1]
+            except KeyError:
+                completed = 0
+            completed_text = "{}".format(completed).rjust(10)
+            sum_completed += completed
             try:
                 failed = group.value_counts()[0]
             except KeyError:
                 failed = 0
             failed_text = "{}".format(failed).rjust(10)
+            sum_failed += failed
 
             log.info('{}{}{}'
                     .format(workflow_text, completed_text, failed_text))
+        log.info('{:>25}{:>10}{:>10}'.format('-'*len('total'), '-'*5, '-'*5))
+        log.info('{:>25}{:>10}{:>10}'.format('total', sum_completed, sum_failed))
         log.info('')
 
 def get_summary(series):

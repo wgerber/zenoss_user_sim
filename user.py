@@ -93,10 +93,15 @@ class User(object):
 
         pushActionStat = getPushActionStat(
                 self.tsdbQueue, self.name, login.name, self.simId)
-        if not self.executeWorkflow(login, pushActionStat):
+
+        success = self.executeWorkflow(login, pushActionStat)
+        if not success:
             # TODO - handle more gracefully
             self.log("could not log in", severity="ERROR")
             raise Exception("could not log in")
+
+        pushStat(self.tsdbQueue, self.name, login.name, None,
+                'workflow', int(success), time.time(), self.simId)
 
         start = time.time()
         HOUR_TO_SEC = 3600
@@ -118,16 +123,8 @@ class User(object):
                    "workflow %s(#%i) successful"
                    % (workflow.name, self.workflowsComplete))
 
-                tags = {'user': self.name,
-                        'workflow': workflow.name,
-                        'host': socket.gethostname(),
-                        'simId': self.simId}
-                data = [{
-                    'timestamp': time.time(),
-                    'metric': 'workflow',
-                    'value': int(success),
-                    'tags': tags}]
-                self.tsdbQueue.put(data)
+                pushStat(self.tsdbQueue, self.name, workflow.name, None,
+                        'workflow', int(success), time.time(), self.simId)
 
                 # take a reddit break
                 time.sleep(REDDIT_TIME)
@@ -142,10 +139,15 @@ class User(object):
 
         pushActionStat = getPushActionStat(
                 self.tsdbQueue, self.name, logout.name, self.simId)
-        if not self.executeWorkflow(logout, pushActionStat):
+
+        success = self.executeWorkflow(logout, pushActionStat)
+        if not success:
             # TODO - handle more gracefully
             self.log("could not log out", severity="ERROR")
             raise Exception("could not log out")
+
+        pushStat(self.tsdbQueue, self.name, logout.name, None,
+                'workflow', int(success), time.time(), self.simId)
 
         self.log("completed %i workflows, failed %i workflows over %is" % (self.workflowsComplete, self.workflowsFailed, time.time() - start),
                 severity="HAPPY")
@@ -191,4 +193,16 @@ class User(object):
             for k, v in stat.iteritems():
                 data.append({'timestamp': time.time(), 'metric': k, 'value': v, 'tags': {'user': self.name}})
             self.tsdbQueue.put(data)
+
+def pushWorkflowOutcome(tsdbQueue, user, workflow, simId, outcome):
+    tags = {'user': user,
+            'workflow': workflow,
+            'host': socket.gethostname(),
+            'simId': simId}
+    data = [{
+        'timestamp': time.time(),
+        'metric': 'workflow',
+        'value': int(outcome),
+        'tags': tags}]
+    tsdbQueue.put(data)
 
