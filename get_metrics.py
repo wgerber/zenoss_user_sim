@@ -175,16 +175,16 @@ class WaitTimeMetricAnalyzer(MetricAnalyzer):
         grouped = self.df.groupby('action')['value']
         log.info('')
         log.info('{:^75}'.format('Group by Actions'))
-        log.info('{:^25}{:^10}{:^10}{:^10}{:^10}{:^10}'
+        log.info('{:^31}{:^10}{:^10}{:^10}{:^10}{:^10}'
                 .format('action', 'count', 'min', 'max', 'mean', 'std'))
         for action, group in grouped:
             summary = get_summary(group)
-            action_text = '{:>25}'.format(action)
+            action_text = '{:>31}'.format(action)
             count_text = "{0}".format(summary.get("count")).rjust(10)
-            min_text = "{0:0.4f}".format(summary.get("min")).rjust(10)
-            max_text = "{0:0.4f}".format(summary.get("max")).rjust(10)
-            mean_text = "{0:0.4f}".format(summary.get("mean")).rjust(10)
-            std_text = "{0:0.4f}".format(summary.get("std")).rjust(10)
+            min_text = "{0:0.2f}".format(summary.get("min")).rjust(10)
+            max_text = "{0:0.2f}".format(summary.get("max")).rjust(10)
+            mean_text = "{0:0.2f}".format(summary.get("mean")).rjust(10)
+            std_text = "{0:0.2f}".format(summary.get("std")).rjust(10)
             log.info('{}{}{}{}{}{}'
                     .format(action_text, count_text, min_text, max_text,
                             mean_text, std_text))
