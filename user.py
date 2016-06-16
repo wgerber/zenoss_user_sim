@@ -193,16 +193,3 @@ class User(object):
             for k, v in stat.iteritems():
                 data.append({'timestamp': time.time(), 'metric': k, 'value': v, 'tags': {'user': self.name}})
             self.tsdbQueue.put(data)
-
-def pushWorkflowOutcome(tsdbQueue, user, workflow, simId, outcome):
-    tags = {'user': user,
-            'workflow': workflow,
-            'host': socket.gethostname(),
-            'simId': simId}
-    data = [{
-        'timestamp': time.time(),
-        'metric': 'workflow',
-        'value': int(outcome),
-        'tags': tags}]
-    tsdbQueue.put(data)
-
