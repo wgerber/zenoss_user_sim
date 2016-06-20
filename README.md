@@ -49,7 +49,7 @@ For configuration options, try `python sim.py --help` or `docker run zenoss/user
 ## Getting Stats
 All the stats from the run are pushed to the opentsdb that is provided when the run is started. The stats track the number of users, amount of time a user spends waiting for things to load, thinking, and total time performing workflows. If zope logging is in place, this can produce a complete picture of what's affecting user experience.
 
-![Results from a user sim run](results.png)
+![Results from a user sim run](results1.png)
 Purple rectangles show user count, blue asterisks are elapsed time spent working, green crosses are time spent waiting, red lines are server request duration.
 
 
