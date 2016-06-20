@@ -166,10 +166,11 @@ class RequestDurationMetricAnalyzer(MetricAnalyzer):
             log.info("{0}: {1} => {2}".format(val[0], val[1], val[2]))
 
     def print_top_n_by_count(self, n = 20):
-        sizes = self.df.groupby('action').size()
-        countDF = (pd.DataFrame(sizes, columns = ['count'])
-                     .sort_values('count', ascending = False))
-        print countDF.head(n)
+        grouped = self.df.groupby('action').value
+        count_df = (pd.DataFrame(grouped.size(), columns = ['count'])
+                      .sort_values('count', ascending = False))
+        count_df['mean_duration'] = grouped.mean()
+        print count_df.head(n)
 
 class WaitTimeMetricAnalyzer(MetricAnalyzer):
 
