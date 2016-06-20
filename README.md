@@ -49,14 +49,13 @@ For configuration options, try `python sim.py --help` or `docker run zenoss/user
 ## Getting Stats
 All the stats from the run are pushed to the opentsdb that is provided when the run is started. The stats track the number of users, amount of time a user spends waiting for things to load, thinking, and total time performing workflows. If zope logging is in place, this can produce a complete picture of what's affecting user experience.
 
+The key stats are `waitTime`, `elapsedTime`, and `userCount`. The tsdb graphing UI will fill in the relevant tags. Specifically, try setting the `action` tag to `*` to break out the results by action.
+
 ![Results from a user sim run](results1.png)
 Purple rectangles show user count, blue asterisks are elapsed time spent working, green crosses are time spent waiting, red lines are server request duration.
 
-
 ![Results showing wait time by workflow](results2.png)
 These results show the time the user spent waiting, where each series is a specific workflow. The red lines at the beginning are the Log In workflow. The Monitor Devices workflow is the dark red series that produces the most wait time.
-
-The key stats are `waitTime`, `elapsedTime`, and `userCount`. The tsdb graphing UI will fill in the relevant tags. Specifically, try setting the `action` tag to `*` to break out the results but action.
 
 Finally, the `userCount` stat has to be aggregated after a run is complete. This, as well as generating a number of other useful stats, can be done done by running `get_metrics.py`. An example run:
 
