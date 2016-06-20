@@ -57,7 +57,7 @@ Purple rectangles show user count, blue asterisks are elapsed time spent working
 ![Results showing wait time by workflow](results2.png)
 These results show the time the user spent waiting, where each series is a specific workflow. The red lines at the beginning are the Log In workflow. The Monitor Devices workflow is the dark red series that produces the most wait time.
 
-Finally, the `userCount` stat has to be aggregated after a run is complete. This, as well as generating a number of other useful stats, can be done done by running `get_metrics.py`. An example run:
+Finally, the `userCount` stat has to be aggregated after a run is complete. This, as well as generating a number of other useful stats, can be done done by running `get_metrics.py` (requires pandas and pytz python modules). An example run:
 
     python get_metrics.py -s 2016/06/16-20:40:00 \
         -e 2016/06/16-20:56:00 \
