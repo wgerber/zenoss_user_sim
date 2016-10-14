@@ -15,7 +15,7 @@ if [ -z $pass ]; then
 fi
 
 logdir="$(pwd)/log"
-user="zenny"
+user="testuser1"
 workflows="MonitorEvents, InvestigateDevice, MonitorDashboard, InvestigateDevice, MonitorDevices"
 duration=900
 
@@ -23,13 +23,13 @@ docker run --privileged \
     -v "$logdir":/root/log \
     -v /dev/shm:/dev/shm \
     -v /etc/hosts:/etc/hosts \
-    zenoss/usersim:v2 \
-    -u https://zenoss5.graveyard.zenoss.loc \
+    zenoss/usersim:v3 \
+    -u https://zenoss5.zenoss.com \
     -n $user \
     -p $pass \
     -c $count \
     --duration $duration \
     --log-dir ./log \
-    --tsdb-url https://opentsdb.graveyard \
+    --tsdb-url http://10.88.122.63:32791 \
     --workflows "$workflows" \
     --simId "$simId"

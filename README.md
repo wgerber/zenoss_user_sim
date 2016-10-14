@@ -4,7 +4,7 @@ This tool simulators user actions against the Zenoss UI. It also provides conven
 ## Usage
 A Dockerfile is included that will build an image which can point simulated users at a Zenoss instance. First build the Dockerfile
 
-    docker build -t zenoss/usersim:v2 .
+    docker build -t zenoss/usersim:v3 .
 
 Once the build is complete, the image can be launched and command line arguments passed in via sim.sh
 
@@ -19,7 +19,7 @@ Or if you prefer, you can wrangle absurdly long commands like this:
         -v $(pwd)/log:/root/log \
         -v /dev/shm:/dev/shm \
         -v /etc/hosts:/etc/hosts \
-        zenoss/usersim:v2 \
+        zenoss/usersim:v3 \
         -u https://zenoss5.graveyard.zenoss.loc \
         -n zenny \
         -p **** \
@@ -44,7 +44,7 @@ To run directly in python, install dependencies (`Xvfb` and `chromedriver` for t
         --tsdb-url https://opentsdb.graveyard \
         --workflows="MonitorEvents, InvestigateDevice, MonitorDashboard, InvestigateDevice, MonitorDevices"
 
-For configuration options, try `python sim.py --help` or `docker run zenoss/usersim:v2`.
+For configuration options, try `python sim.py --help` or `docker run zenoss/usersim:v3`.
 
 ## Getting Stats
 All the stats from the run are pushed to the opentsdb that is provided when the run is started. The stats track the number of users, amount of time a user spends waiting for things to load, thinking, and total time performing workflows. If zope logging is in place, this can produce a complete picture of what's affecting user experience.
