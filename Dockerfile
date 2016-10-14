@@ -17,7 +17,7 @@ RUN apt install -y -q google-chrome-stable
 RUN pip install selenium xvfbwrapper requests
 
 # download and install chromedriver
-RUN wget -c https://chromedriver.storage.googleapis.com/2.21/chromedriver_linux64.zip
+RUN wget -c https://chromedriver.storage.googleapis.com/2.24/chromedriver_linux64.zip
 RUN unzip chromedriver_linux64.zip
 RUN cp ./chromedriver /usr/bin/
 RUN rm chromedriver*
