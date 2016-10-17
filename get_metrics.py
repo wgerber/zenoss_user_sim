@@ -10,9 +10,7 @@ import time
 
 import pandas as pd
 from pandas import DataFrame, Series
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
-requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 logging.getLogger("requests").setLevel(logging.WARNING)
 
 
