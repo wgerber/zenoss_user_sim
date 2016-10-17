@@ -73,9 +73,9 @@ def find(d, selector, timeout = DEFAULT_TIMEOUT):
     # NOTE - returns invisible elements as well
     return wait(d, EC.presence_of_element_located((By.CSS_SELECTOR, selector)), timeout)
 
-def findMany(d, selector):
+def findMany(d, selector, timeout=DEFAULT_TIMEOUT):
     # NOTE - returns invisible elements as well
-    return wait(d, EC.presence_of_all_elements_located((By.CSS_SELECTOR, selector)), DEFAULT_TIMEOUT)
+    return wait(d, EC.presence_of_all_elements_located((By.CSS_SELECTOR, selector)), timeout)
 
 def findIn(el, selector):
     return el.find_element_by_css_selector(selector)

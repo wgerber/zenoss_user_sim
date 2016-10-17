@@ -236,17 +236,29 @@ def _getComponentRows(user):
 
 @retry(MAX_RETRIES)
 def _selectComponentSection(user, sectionName):
-    dropdownListItems = []
+    dropdownListCount = 0
+    isOpen = False
+
+    # figure out if the component dropdown is open
     try:
-        find(user.driver, locator["componentCardDisplayDropdown"]).click()
-        dropdownListItems = findMany(user.driver, ".x-boundlist .x-boundlist-item")
-    except Exception as e:
+        opts = findMany(user.driver, ".x-boundlist .x-boundlist-item", timeout=5)
+        if len(opts) and opts[0].is_displayed():
+            isOpen = True
+    except StaleElementReferenceException:
         raise PageActionException(whoami(),
-                "could not find our click component 'display' dropdown: %s" % e.msg,
+                "hit stale element while checking dropdown",
                 screen=user.driver.get_screenshot_as_png())
+    except TimeoutException:
+        pass
 
     try:
-        for el in dropdownListItems:
+        # if the dropdown is not open, open it
+        if not isOpen:
+            find(user.driver, locator["componentCardDisplayDropdown"]).click()
+        # find out how many items are in the dropdown
+        dropdownListCount = len(findMany(user.driver, ".x-boundlist .x-boundlist-item"))
+        for i in range(1, dropdownListCount):
+            el = find(user.driver, ".x-boundlist .x-boundlist-item:nth-child(%i)" % i)
             if el.text == sectionName:
                 el.click()
                 return True
@@ -254,6 +266,12 @@ def _selectComponentSection(user, sectionName):
         raise PageActionException(whoami(),
                 "hit stale element while iterating dropdown",
                 screen=user.driver.get_screenshot_as_png())
+    except Exception as e:
+        print(e)
+        raise PageActionException(whoami(),
+                "could not find 'display' dropdown or option '%s': %s" % (sectionName, e.msg),
+                screen=user.driver.get_screenshot_as_png())
+
 
     raise PageActionException(whoami(),
             "didn't find '%s' in components display dropdown" % sectionName,
